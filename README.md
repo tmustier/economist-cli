@@ -1,0 +1,110 @@
+# Economist CLI
+
+A command-line tool to browse and read articles from The Economist.
+
+## Features
+
+- 📰 **Browse headlines** from any section via RSS
+- 🔍 **Search** articles by keyword
+- 📖 **Read full articles** in your terminal (requires subscription)
+- 🎨 **Pretty rendering** with glamour markdown formatting
+
+## Installation
+
+### Prerequisites
+
+- Go 1.25+
+- Chrome/Chromium (for login and article fetching)
+
+### Build from source
+
+```bash
+git clone https://github.com/tmustier/economist-cli
+cd economist-cli
+go build -o economist .
+
+# Install to PATH
+cp economist /usr/local/bin/
+# or
+cp economist ~/bin/
+```
+
+## Quick Start
+
+```bash
+# Browse headlines
+economist headlines leaders
+economist headlines finance -n 5
+
+# Search for topics
+economist headlines business -s "AI"
+
+# Login (one-time, for full articles)
+economist login
+
+# Read an article
+economist read "https://www.economist.com/finance-and-economics/2026/01/19/article-slug"
+
+# Debug (dump HTML for parser troubleshooting)
+economist --debug read "https://www.economist.com/finance-and-economics/2026/01/19/article-slug"
+```
+
+## Commands
+
+### Global flags
+
+| Flag | Description |
+|------|-------------|
+| `--debug` | Dump raw HTML to a temp file for parser troubleshooting |
+
+### `economist headlines [section]`
+
+Fetch latest headlines from a section.
+
+| Flag | Description |
+|------|-------------|
+| `-n, --number` | Number of headlines (default: 10) |
+| `-s, --search` | Filter headlines by keyword |
+
+**Sections:** `leaders`, `briefing`, `finance`, `us`, `britain`, `europe`, `middle-east`, `asia`, `china`, `americas`, `business`, `tech`, `science`, `culture`, `graphic`, `world-this-week`
+
+### `economist read <url>`
+
+Fetch and display a full article.
+
+| Flag | Description |
+|------|-------------|
+| `--raw` | Output plain markdown (no formatting) |
+
+Requires login for full content.
+
+When `--debug` is set, the raw HTML is saved to a temp file and the path is printed to stderr.
+
+### `economist login`
+
+Opens a browser window for Economist login. Cookies are saved locally for future use.
+
+### `economist sections`
+
+List all available sections with aliases.
+
+## Configuration
+
+Config and cookies stored in `~/.config/economist-cli/`
+
+## How It Works
+
+1. **Headlines**: Fetched from Economist RSS feeds (public, no auth needed)
+2. **Articles**: Fetched via headless Chrome to bypass Cloudflare, using saved session cookies
+3. **Login**: Opens visible Chrome, detects successful login, saves cookies
+
+## Limitations
+
+- RSS provides ~300 articles per section (~10 months history)
+- No date filtering or advanced search on RSS
+- Full articles require an active Economist subscription
+- Article parsing may miss some content on non-standard layouts
+
+## License
+
+MIT
