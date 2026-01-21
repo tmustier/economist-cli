@@ -272,14 +272,11 @@ func (m *Model) refreshArticleLines() {
 		return
 	}
 
-	termWidth := m.width
-	if termWidth <= 0 {
-		termWidth = ui.DefaultWidth
-	}
+	opts := m.articleRenderOptions()
 
 	if m.articleBase == "" {
 		baseStart := time.Now()
-		base, err := ui.RenderArticleBodyBase(ui.ArticleBodyMarkdown(m.article), ui.ArticleRenderOptions{NoColor: m.opts.NoColor, PlainBody: true})
+		base, err := ui.RenderArticleBodyBase(ui.ArticleBodyMarkdown(m.article), opts)
 		m.baseDuration = time.Since(baseStart)
 		if err != nil {
 			m.articleErr = err
@@ -292,18 +289,12 @@ func (m *Model) refreshArticleLines() {
 
 	styles := ui.NewArticleStyles(m.opts.NoColor)
 	reflowStart := time.Now()
-	body := ui.ReflowArticleBody(m.articleBase, styles, ui.ArticleRenderOptions{
-		NoColor:   m.opts.NoColor,
-		PlainBody: true,
-		WrapWidth: 0,
-		TermWidth: termWidth,
-		TwoColumn: m.twoColumn,
-	})
+	body := ui.ReflowArticleBody(m.articleBase, styles, opts)
 	m.reflowDuration = time.Since(reflowStart)
 	logging.Debugf(m.opts.Debug, "browse: article reflow %s", m.reflowDuration)
 
 	header := ui.RenderArticleHeader(m.article, styles)
-	indent := ui.ArticleIndent(ui.ArticleRenderOptions{TermWidth: termWidth, TwoColumn: m.twoColumn})
+	indent := ui.ArticleIndent(opts)
 	if indent > 0 {
 		header = ui.IndentBlock(header, indent)
 	}
@@ -316,6 +307,21 @@ func (m *Model) refreshArticleLines() {
 	m.articleErr = nil
 	m.articleLines = strings.Split(strings.TrimRight(header+body+footer, "\n"), "\n")
 	m.clampArticleScroll()
+}
+
+func (m Model) articleRenderOptions() ui.ArticleRenderOptions {
+	termWidth := m.width
+	if termWidth <= 0 {
+		termWidth = ui.DefaultWidth
+	}
+
+	return ui.ArticleRenderOptions{
+		NoColor:   m.opts.NoColor,
+		PlainBody: true,
+		WrapWidth: 0,
+		TermWidth: termWidth,
+		TwoColumn: m.twoColumn,
+	}
 }
 
 func (m Model) pageSize() int {

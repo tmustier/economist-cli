@@ -135,11 +135,7 @@ func (m Model) articleView() string {
 	}
 	help := fmt.Sprintf(articleHelpFormat, columnLabel)
 
-	indent := ui.ArticleIndent(ui.ArticleRenderOptions{
-		WrapWidth: 0,
-		TermWidth: m.width,
-		TwoColumn: m.twoColumn,
-	})
+	indent := ui.ArticleIndent(m.articleRenderOptions())
 	if indent > 0 {
 		helper := ui.IndentBlock(styles.Help.Render(help), indent)
 		b.WriteString(helper)
