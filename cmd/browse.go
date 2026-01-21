@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"unicode"
 
-	"github.com/charmbracelet/bubbletea"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"github.com/tmustier/economist-cli/internal/article"
@@ -19,7 +20,7 @@ var browseCmd = &cobra.Command{
 	Short: "Browse headlines interactively",
 	Long: `Browse headlines in an interactive TUI.
 
-Use ↑/↓ or j/k to navigate, Enter to read, q to quit.
+Use ↑/↓ or j/k to navigate, Enter to read, / to search, q to quit.
 
 Examples:
   economist browse
@@ -48,8 +49,8 @@ func runBrowse(cmd *cobra.Command, args []string) error {
 	}
 
 	items := feed.Channel.Items
-	if len(items) > 20 {
-		items = items[:20]
+	if len(items) > 50 {
+		items = items[:50]
 	}
 
 	m := initialModel(items, section)
@@ -90,12 +91,15 @@ func readArticle(url string) error {
 // Model
 
 type model struct {
-	items    []rss.Item
-	section  string
-	cursor   int
-	selected *rss.Item
-	width    int
-	height   int
+	allItems      []rss.Item
+	filteredItems []rss.Item
+	section       string
+	cursor        int
+	selected      *rss.Item
+	width         int
+	height        int
+	searching     bool
+	searchQuery   string
 }
 
 func initialModel(items []rss.Item, section string) model {
@@ -107,10 +111,11 @@ func initialModel(items []rss.Item, section string) model {
 		h = 24
 	}
 	return model{
-		items:   items,
-		section: section,
-		width:   w,
-		height:  h,
+		allItems:      items,
+		filteredItems: items,
+		section:       section,
+		width:         w,
+		height:        h,
 	}
 }
 
@@ -118,29 +123,114 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
+func (m *model) filterItems() {
+	if m.searchQuery == "" {
+		m.filteredItems = m.allItems
+		return
+	}
+
+	query := strings.ToLower(m.searchQuery)
+	tokens := strings.Fields(query)
+
+	var filtered []rss.Item
+	for _, item := range m.allItems {
+		text := strings.ToLower(item.CleanTitle() + " " + item.CleanDescription())
+		allMatch := true
+		for _, token := range tokens {
+			if !fuzzyContains(text, token) {
+				allMatch = false
+				break
+			}
+		}
+		if allMatch {
+			filtered = append(filtered, item)
+		}
+	}
+	m.filteredItems = filtered
+
+	// Reset cursor if out of bounds
+	if m.cursor >= len(m.filteredItems) {
+		m.cursor = max(0, len(m.filteredItems)-1)
+	}
+}
+
+// fuzzyContains checks if all characters in query appear in text in order
+func fuzzyContains(text, query string) bool {
+	if query == "" {
+		return true
+	}
+
+	queryIdx := 0
+	for i := 0; i < len(text) && queryIdx < len(query); i++ {
+		if text[i] == query[queryIdx] {
+			queryIdx++
+		}
+	}
+	return queryIdx == len(query)
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Search mode input handling
+		if m.searching {
+			switch msg.Type {
+			case tea.KeyEsc:
+				m.searching = false
+				m.searchQuery = ""
+				m.filterItems()
+			case tea.KeyEnter:
+				m.searching = false
+				// Keep the filter active
+			case tea.KeyBackspace:
+				if len(m.searchQuery) > 0 {
+					m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
+					m.filterItems()
+				}
+			case tea.KeyRunes:
+				for _, r := range msg.Runes {
+					if unicode.IsPrint(r) {
+						m.searchQuery += string(r)
+					}
+				}
+				m.filterItems()
+			case tea.KeySpace:
+				m.searchQuery += " "
+				m.filterItems()
+			}
+			return m, nil
+		}
+
+		// Normal mode
 		switch msg.String() {
-		case "q", "ctrl+c", "esc":
+		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "esc":
+			if m.searchQuery != "" {
+				m.searchQuery = ""
+				m.filterItems()
+			} else {
+				return m, tea.Quit
+			}
+		case "/":
+			m.searching = true
 		case "up", "k":
 			if m.cursor > 0 {
 				m.cursor--
 			}
 		case "down", "j":
-			if m.cursor < len(m.items)-1 {
+			if m.cursor < len(m.filteredItems)-1 {
 				m.cursor++
 			}
 		case "enter":
-			if len(m.items) > 0 {
-				m.selected = &m.items[m.cursor]
+			if len(m.filteredItems) > 0 && m.cursor < len(m.filteredItems) {
+				m.selected = &m.filteredItems[m.cursor]
 				return m, tea.Quit
 			}
-		case "home":
+		case "home", "g":
 			m.cursor = 0
-		case "end":
-			m.cursor = len(m.items) - 1
+		case "end", "G":
+			m.cursor = max(0, len(m.filteredItems)-1)
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -155,92 +245,132 @@ func (m model) View() string {
 	selectedStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("212"))
 	dimStyle := lipgloss.NewStyle().Faint(true)
 	helpStyle := lipgloss.NewStyle().Faint(true)
+	searchStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("220"))
 
 	var b strings.Builder
 
 	// Header
 	header := titleStyle.Render(fmt.Sprintf("The Economist — %s", m.section))
 	b.WriteString(header + "\n")
-	b.WriteString(strings.Repeat("─", min(m.width, 60)) + "\n\n")
+	b.WriteString(strings.Repeat("─", min(m.width, 60)) + "\n")
 
-	// Calculate visible items based on terminal height
-	visibleItems := m.height - 6 // Reserve space for header and footer
-	if visibleItems < 5 {
-		visibleItems = 5
-	}
-	itemHeight := 3 // lines per item
-	maxVisible := visibleItems / itemHeight
-	if maxVisible > len(m.items) {
-		maxVisible = len(m.items)
+	// Search bar
+	if m.searching {
+		b.WriteString(searchStyle.Render("/ ") + m.searchQuery + "█\n")
+	} else if m.searchQuery != "" {
+		b.WriteString(dimStyle.Render(fmt.Sprintf("filter: %s", m.searchQuery)) + "\n")
+	} else {
+		b.WriteString("\n")
 	}
 
-	// Calculate scroll offset
-	start := 0
-	if m.cursor >= maxVisible {
-		start = m.cursor - maxVisible + 1
-	}
-	end := start + maxVisible
-	if end > len(m.items) {
-		end = len(m.items)
-	}
+	items := m.filteredItems
 
-	// Fixed column width for titles (date always starts at same position)
-	dateWidth := 14 // "Jan 20, 2026" = 12 chars + 2 padding
-	titleColWidth := m.width - len("▸ ") - dateWidth
-	if titleColWidth < 30 {
-		titleColWidth = 30
-	}
-
-	// Items
-	for i := start; i < end; i++ {
-		item := m.items[i]
-		cursor := "  "
-		style := lipgloss.NewStyle()
-		if i == m.cursor {
-			cursor = "▸ "
-			style = selectedStyle
+	if len(items) == 0 {
+		b.WriteString("\n" + dimStyle.Render("  No matching articles") + "\n")
+	} else {
+		// Calculate visible items based on terminal height
+		reservedLines := 7 // header + search + footer
+		if m.searchQuery != "" || m.searching {
+			reservedLines++
+		}
+		visibleItems := m.height - reservedLines
+		if visibleItems < 5 {
+			visibleItems = 5
+		}
+		itemHeight := 2 // lines per item (title + description)
+		maxVisible := visibleItems / itemHeight
+		if maxVisible > len(items) {
+			maxVisible = len(items)
+		}
+		if maxVisible < 1 {
+			maxVisible = 1
 		}
 
-		title := item.CleanTitle()
-		date := item.FormattedDate()
-
-		// Truncate or pad title to fixed width
-		displayTitle := title
-		if len(title) > titleColWidth {
-			displayTitle = title[:titleColWidth-3] + "..."
+		// Calculate scroll offset
+		start := 0
+		if m.cursor >= maxVisible {
+			start = m.cursor - maxVisible + 1
 		}
-		// Pad to fixed width so dates align
-		displayTitle = fmt.Sprintf("%-*s", titleColWidth, displayTitle)
+		end := start + maxVisible
+		if end > len(items) {
+			end = len(items)
+		}
 
-		b.WriteString(fmt.Sprintf("%s%s%s\n",
-			cursor,
-			style.Render(displayTitle),
-			dimStyle.Render(date),
-		))
+		// Fixed column width for titles (date always starts at same position)
+		dateWidth := 14 // "Jan 20, 2026" = 12 chars + 2 padding
+		titleColWidth := m.width - len("▸ ") - dateWidth
+		if titleColWidth < 30 {
+			titleColWidth = 30
+		}
 
-		desc := item.CleanDescription()
-		if desc != "" {
-			maxDescLen := m.width - 6
-			if maxDescLen < 30 {
-				maxDescLen = 30
+		// Items
+		for i := start; i < end; i++ {
+			item := items[i]
+			cursor := "  "
+			style := lipgloss.NewStyle()
+			if i == m.cursor {
+				cursor = "▸ "
+				style = selectedStyle
 			}
-			if len(desc) > maxDescLen {
-				desc = desc[:maxDescLen-3] + "..."
+
+			title := item.CleanTitle()
+			date := item.FormattedDate()
+
+			// Truncate or pad title to fixed width
+			displayTitle := title
+			if len(title) > titleColWidth {
+				displayTitle = title[:titleColWidth-3] + "..."
 			}
-			b.WriteString(fmt.Sprintf("    %s\n", dimStyle.Render(desc)))
+			// Pad to fixed width so dates align
+			displayTitle = fmt.Sprintf("%-*s", titleColWidth, displayTitle)
+
+			b.WriteString(fmt.Sprintf("%s%s%s\n",
+				cursor,
+				style.Render(displayTitle),
+				dimStyle.Render(date),
+			))
+
+			desc := item.CleanDescription()
+			if desc != "" {
+				maxDescLen := m.width - 6
+				if maxDescLen < 30 {
+					maxDescLen = 30
+				}
+				if len(desc) > maxDescLen {
+					desc = desc[:maxDescLen-3] + "..."
+				}
+				b.WriteString(fmt.Sprintf("    %s\n", dimStyle.Render(desc)))
+			}
+		}
+
+		// Scroll indicator
+		if len(items) > maxVisible {
+			b.WriteString(dimStyle.Render(fmt.Sprintf("\n  (%d/%d)", m.cursor+1, len(items))))
 		}
 	}
 
 	// Footer
-	b.WriteString("\n")
-	help := helpStyle.Render("↑/↓ navigate • enter read • q quit")
-	b.WriteString(help)
+	b.WriteString("\n\n")
+	if m.searching {
+		help := helpStyle.Render("type to search • enter confirm • esc cancel")
+		b.WriteString(help)
+	} else {
+		help := helpStyle.Render("↑/↓ navigate • enter read • / search • q quit")
+		b.WriteString(help)
+	}
 
 	return b.String()
 }
 
 func min(a, b int) int {
 	if a < b {
+		return a
+	}
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
 		return a
 	}
 	return b
