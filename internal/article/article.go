@@ -16,8 +16,10 @@ import (
 
 // Content length thresholds
 const (
-	minParagraphLen = 40  // Skip very short paragraphs
-	minContentLen   = 500 // Minimum content to consider article "loaded"
+	minParagraphLen      = 40  // Skip very short paragraphs
+	minContentLen        = 500 // Minimum content to consider article "loaded"
+	articleReadySelector = "article h1, h1.article__headline, [data-test-id='headline'], article"
+	articleWaitTimeout   = 8 * time.Second
 )
 
 type Article struct {
@@ -40,7 +42,8 @@ func Fetch(articleURL string, opts FetchOptions) (*Article, error) {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
 
-	ctx, cancel := browser.HeadlessContext(context.Background(), opts.Debug)
+	baseCtx := browser.SharedHeadlessContext(opts.Debug)
+	ctx, cancel := chromedp.NewContext(baseCtx)
 	defer cancel()
 
 	ctx, cancel = context.WithTimeout(ctx, browser.FetchTimeout)
@@ -55,8 +58,8 @@ func Fetch(articleURL string, opts FetchOptions) (*Article, error) {
 	var html string
 	err = chromedp.Run(ctx,
 		chromedp.Navigate(articleURL),
-		chromedp.WaitVisible("body", chromedp.ByQuery),
-		chromedp.Sleep(browser.PageLoadWait),
+		chromedp.WaitReady("body", chromedp.ByQuery),
+		waitForArticleSelector(articleWaitTimeout),
 		chromedp.OuterHTML("html", &html),
 	)
 	if err != nil {
@@ -237,6 +240,15 @@ func writeDebugHTML(html string) (string, error) {
 	}
 
 	return file.Name(), nil
+}
+
+func waitForArticleSelector(timeout time.Duration) chromedp.ActionFunc {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		waitCtx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+		_ = chromedp.Run(waitCtx, chromedp.WaitVisible(articleReadySelector, chromedp.ByQuery))
+		return nil
+	})
 }
 
 func debugf(enabled bool, format string, args ...any) {

@@ -3,6 +3,7 @@ package browser
 import (
 	"context"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/chromedp/cdproto/network"
@@ -15,11 +16,16 @@ const (
 	LoginURL     = "https://www.economist.com/api/auth/login"
 	LoginTimeout = 5 * time.Minute
 	FetchTimeout = 45 * time.Second
-	PageLoadWait = 3 * time.Second
 )
 
-// HeadlessContext creates a headless browser context for fetching pages.
-func HeadlessContext(ctx context.Context, debug bool) (context.Context, context.CancelFunc) {
+var (
+	sharedMu     sync.Mutex
+	sharedCtx    context.Context
+	sharedCancel context.CancelFunc
+	sharedDebug  bool
+)
+
+func headlessExecAllocatorOptions(debug bool) []chromedp.ExecAllocatorOption {
 	opts := append(chromedp.DefaultExecAllocatorOptions[:],
 		chromedp.Flag("headless", true),
 		chromedp.Flag("disable-gpu", true),
@@ -33,7 +39,11 @@ func HeadlessContext(ctx context.Context, debug bool) (context.Context, context.
 			chromedp.Flag("log-level", "3"),
 		)
 	}
+	return opts
+}
 
+func newHeadlessContext(ctx context.Context, debug bool) (context.Context, context.CancelFunc) {
+	opts := headlessExecAllocatorOptions(debug)
 	allocCtx, allocCancel := chromedp.NewExecAllocator(ctx, opts...)
 	logf := func(string, ...interface{}) {}
 	if debug {
@@ -47,6 +57,39 @@ func HeadlessContext(ctx context.Context, debug bool) (context.Context, context.
 	}
 
 	return browserCtx, cancel
+}
+
+// HeadlessContext creates a headless browser context for fetching pages.
+func HeadlessContext(ctx context.Context, debug bool) (context.Context, context.CancelFunc) {
+	return newHeadlessContext(ctx, debug)
+}
+
+// SharedHeadlessContext returns a shared headless browser context for this process.
+func SharedHeadlessContext(debug bool) context.Context {
+	sharedMu.Lock()
+	defer sharedMu.Unlock()
+
+	if sharedCtx == nil || sharedDebug != debug {
+		if sharedCancel != nil {
+			sharedCancel()
+		}
+		sharedCtx, sharedCancel = newHeadlessContext(context.Background(), debug)
+		sharedDebug = debug
+	}
+
+	return sharedCtx
+}
+
+// CloseSharedHeadless closes the shared browser, if any.
+func CloseSharedHeadless() {
+	sharedMu.Lock()
+	defer sharedMu.Unlock()
+
+	if sharedCancel != nil {
+		sharedCancel()
+		sharedCancel = nil
+		sharedCtx = nil
+	}
 }
 
 // VisibleContext creates a visible browser context for interactive login.
