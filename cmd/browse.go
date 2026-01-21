@@ -13,6 +13,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tmustier/economist-cli/internal/daemon"
 	appErrors "github.com/tmustier/economist-cli/internal/errors"
+	"github.com/tmustier/economist-cli/internal/fetch"
+	"github.com/tmustier/economist-cli/internal/logging"
 	"github.com/tmustier/economist-cli/internal/rss"
 	"github.com/tmustier/economist-cli/internal/search"
 	"github.com/tmustier/economist-cli/internal/ui"
@@ -41,17 +43,17 @@ func runBrowse(cmd *cobra.Command, args []string) error {
 		return appErrors.NewUserError("browse requires an interactive terminal - use 'headlines --json' for scripts")
 	}
 
-	tracef("browse: ensure daemon")
+	logging.Debugf(debugMode, "browse: ensure daemon")
 	if err := daemon.EnsureBackground(); err != nil {
-		tracef("browse: daemon start error: %v", err)
+		logging.Debugf(debugMode, "browse: daemon start error: %v", err)
 	}
 	if debugMode {
 		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 		defer cancel()
 		if latency, running, err := daemon.Status(ctx); err == nil {
-			tracef("browse: daemon status running=%t latency=%s", running, latency)
+			logging.Debugf(debugMode, "browse: daemon status running=%t latency=%s", running, latency)
 		} else {
-			tracef("browse: daemon status error: %v", err)
+			logging.Debugf(debugMode, "browse: daemon status error: %v", err)
 		}
 	}
 
@@ -93,13 +95,15 @@ func runBrowse(cmd *cobra.Command, args []string) error {
 }
 
 func readArticle(url string) error {
-	fmt.Printf("Loading article...\n\n")
+	fmt.Fprintln(os.Stderr, "Loading article...")
 
-	art, err := fetchArticle(url)
+	art, err := fetch.FetchArticle(url, fetch.Options{Debug: debugMode})
 	if err != nil {
 		return err
 	}
 
+	fmt.Fprintln(os.Stderr, "Article loaded.")
+	fmt.Fprintln(os.Stderr)
 	return outputArticle(art)
 }
 

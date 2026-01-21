@@ -2,21 +2,17 @@ package cmd
 
 import (
 	"bufio"
-	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/glamour"
 	"github.com/spf13/cobra"
 	"github.com/tmustier/economist-cli/internal/article"
-	"github.com/tmustier/economist-cli/internal/browser"
 	"github.com/tmustier/economist-cli/internal/config"
-	"github.com/tmustier/economist-cli/internal/daemon"
 	appErrors "github.com/tmustier/economist-cli/internal/errors"
+	"github.com/tmustier/economist-cli/internal/fetch"
 	"github.com/tmustier/economist-cli/internal/ui"
 )
 
@@ -59,7 +55,7 @@ func runRead(cmd *cobra.Command, args []string) error {
 		fmt.Fprintln(os.Stderr, "")
 	}
 
-	art, err := fetchArticle(url)
+	art, err := fetch.FetchArticle(url, fetch.Options{Debug: debugMode})
 	if err != nil {
 		return err
 	}
@@ -71,81 +67,6 @@ func runRead(cmd *cobra.Command, args []string) error {
 	return outputArticle(art)
 }
 
-func fetchArticle(url string) (*article.Article, error) {
-	tracef("read: start url=%s", url)
-
-	art, err := fetchArticleDaemon(url)
-	if err == nil {
-		tracef("read: daemon fetch ok")
-		return validateArticle(art)
-	}
-	if !errors.Is(err, daemon.ErrNotRunning) {
-		tracef("read: daemon fetch error: %v", err)
-		return nil, err
-	}
-
-	tracef("read: daemon unavailable, using local fetch")
-	art, err = fetchArticleLocal(url)
-	if err != nil {
-		return nil, err
-	}
-
-	return validateArticle(art)
-}
-
-func fetchArticleDaemon(url string) (*article.Article, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), browser.FetchTimeout)
-	defer cancel()
-
-	tracef("read: trying daemon fetch")
-	start := time.Now()
-	art, err := daemon.Fetch(ctx, url, debugMode)
-	if err == nil {
-		tracef("read: daemon response in %s", time.Since(start))
-		return art, nil
-	}
-	if !errors.Is(err, daemon.ErrNotRunning) {
-		return nil, err
-	}
-
-	tracef("read: daemon not running, starting background")
-	_ = daemon.EnsureBackground()
-
-	readyCtx, readyCancel := context.WithTimeout(context.Background(), 2*time.Second)
-	defer readyCancel()
-	if daemon.WaitForReady(readyCtx, 200*time.Millisecond) {
-		tracef("read: daemon ready, retry fetch")
-		art, err = daemon.Fetch(ctx, url, debugMode)
-		if err == nil {
-			tracef("read: daemon response after wait in %s", time.Since(start))
-			return art, nil
-		}
-		return nil, err
-	}
-
-	tracef("read: daemon not ready after wait")
-	return nil, daemon.ErrNotRunning
-}
-
-func fetchArticleLocal(url string) (*article.Article, error) {
-	art, err := article.Fetch(url, article.FetchOptions{Debug: debugMode})
-	if err != nil {
-		if appErrors.IsPaywallError(err) {
-			return nil, appErrors.NewUserError("paywall detected - run 'economist login' to read full articles")
-		}
-		return nil, err
-	}
-
-	return art, nil
-}
-
-func validateArticle(art *article.Article) (*article.Article, error) {
-	if art.Content == "" {
-		return nil, appErrors.NewUserError("no article content found - try 'economist login'")
-	}
-	return art, nil
-}
-
 func outputArticle(art *article.Article) error {
 	if rawOutput {
 		fmt.Println(art.ToMarkdown())
@@ -153,9 +74,9 @@ func outputArticle(art *article.Article) error {
 	}
 
 	styles := ui.NewArticleStyles(noColor)
-	printArticleHeader(art, styles)
+	fmt.Print(ui.RenderArticleHeader(art, styles))
 
-	md := articleBodyMarkdown(art)
+	md := ui.ArticleBodyMarkdown(art)
 	if noColor {
 		fmt.Println(md)
 		return nil
@@ -180,31 +101,6 @@ func outputArticle(art *article.Article) error {
 
 	fmt.Println(out)
 	return nil
-}
-
-func printArticleHeader(art *article.Article, styles ui.ArticleStyles) {
-	if art.Title != "" {
-		fmt.Println(styles.Title.Render(art.Title))
-	}
-	if art.Subtitle != "" {
-		fmt.Println(styles.Subtitle.Render(art.Subtitle))
-	}
-	if art.DateLine != "" {
-		fmt.Println(styles.Date.Render(art.DateLine))
-	}
-	fmt.Println()
-	fmt.Println(styles.Rule.Render("--------"))
-	fmt.Println()
-}
-
-func articleBodyMarkdown(art *article.Article) string {
-	var sb strings.Builder
-	if art.Content != "" {
-		sb.WriteString(art.Content)
-	}
-	sb.WriteString("\n\n---\n\n")
-	sb.WriteString(fmt.Sprintf("🔗 %s\n", art.URL))
-	return sb.String()
 }
 
 func resolveURL(args []string) (string, error) {

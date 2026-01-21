@@ -18,6 +18,7 @@ import (
 	"github.com/tmustier/economist-cli/internal/article"
 	"github.com/tmustier/economist-cli/internal/config"
 	appErrors "github.com/tmustier/economist-cli/internal/errors"
+	"github.com/tmustier/economist-cli/internal/logging"
 )
 
 const (
@@ -230,6 +231,7 @@ func Serve() error {
 	}()
 
 	_ = os.Chmod(socketPath, 0600)
+	fmt.Printf("Daemon listening on %s\n", socketPath)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -266,9 +268,16 @@ func Serve() error {
 		defer fetchMu.Unlock()
 
 		start := time.Now()
-		debugDaemon(req.Debug, "fetch start url=%s", req.URL)
-		art, err := article.Fetch(req.URL, article.FetchOptions{Debug: req.Debug})
-		debugDaemon(req.Debug, "fetch done in %s err=%v", time.Since(start), err)
+		logging.Debugf(req.Debug, "daemon: fetch start url=%s", req.URL)
+		cfg, cfgErr := config.Load()
+		if cfgErr != nil {
+			resp := FetchResponse{Error: cfgErr.Error()}
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(resp)
+			return
+		}
+		art, err := article.FetchWithCookies(req.URL, article.FetchOptions{Debug: req.Debug}, cfg.Cookies)
+		logging.Debugf(req.Debug, "daemon: fetch done in %s err=%v", time.Since(start), err)
 
 		resp := FetchResponse{}
 		if err != nil {
@@ -351,12 +360,4 @@ func isConnRefused(err error) bool {
 		}
 	}
 	return false
-}
-
-func debugDaemon(enabled bool, format string, args ...any) {
-	if !enabled {
-		return
-	}
-	ts := time.Now().Format(time.RFC3339Nano)
-	fmt.Fprintf(os.Stderr, "debug %s daemon: "+format+"\n", append([]any{ts}, args...)...)
 }

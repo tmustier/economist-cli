@@ -14,6 +14,7 @@ import (
 	"github.com/tmustier/economist-cli/internal/browser"
 	"github.com/tmustier/economist-cli/internal/config"
 	appErrors "github.com/tmustier/economist-cli/internal/errors"
+	"github.com/tmustier/economist-cli/internal/logging"
 )
 
 // Content length thresholds
@@ -68,11 +69,15 @@ type FetchOptions struct {
 }
 
 func Fetch(articleURL string, opts FetchOptions) (*Article, error) {
-	start := time.Now()
 	cfg, err := config.Load()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load config: %w", err)
 	}
+	return FetchWithCookies(articleURL, opts, cfg.Cookies)
+}
+
+func FetchWithCookies(articleURL string, opts FetchOptions, cookies []config.Cookie) (*Article, error) {
+	start := time.Now()
 
 	baseCtx := browser.SharedHeadlessContext(opts.Debug)
 	ctx, cancel := chromedp.NewContext(baseCtx)
@@ -81,18 +86,18 @@ func Fetch(articleURL string, opts FetchOptions) (*Article, error) {
 	ctx, cancel = context.WithTimeout(ctx, browser.FetchTimeout)
 	defer cancel()
 
-	debugf(opts.Debug, "context ready in %s", time.Since(start))
+	logging.Debugf(opts.Debug, "context ready in %s", time.Since(start))
 
 	// Inject saved cookies (ignore errors - will just hit paywall)
-	_ = browser.InjectCookies(ctx, cfg.Cookies)
+	_ = browser.InjectCookies(ctx, cookies)
 
 	if err := configureNetwork(ctx, opts.Debug); err != nil {
-		debugf(opts.Debug, "network blocking error: %v", err)
+		logging.Debugf(opts.Debug, "network blocking error: %v", err)
 	}
 
 	navStart := time.Now()
-	debugf(opts.Debug, "navigate start")
-	err = chromedp.Run(ctx,
+	logging.Debugf(opts.Debug, "navigate start")
+	err := chromedp.Run(ctx,
 		navigateNoWait(articleURL),
 		debugStep(opts.Debug, "navigate issued"),
 		chromedp.WaitReady("body", chromedp.ByQuery),
@@ -108,11 +113,11 @@ func Fetch(articleURL string, opts FetchOptions) (*Article, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to capture html: %w", err)
 	}
-	debugf(opts.Debug, "page loaded in %s", time.Since(navStart))
+	logging.Debugf(opts.Debug, "page loaded in %s", time.Since(navStart))
 
 	parseStart := time.Now()
 	art, parseErr := parseArticle(html, articleURL)
-	debugf(opts.Debug, "parsed in %s", time.Since(parseStart))
+	logging.Debugf(opts.Debug, "parsed in %s", time.Since(parseStart))
 
 	if opts.Debug {
 		if path, err := writeDebugHTML(html); err == nil {
@@ -121,7 +126,7 @@ func Fetch(articleURL string, opts FetchOptions) (*Article, error) {
 			}
 			art.DebugHTMLPath = path
 		}
-		debugf(opts.Debug, "total fetch time %s", time.Since(start))
+		logging.Debugf(opts.Debug, "total fetch time %s", time.Since(start))
 	}
 	if parseErr != nil {
 		return art, parseErr
@@ -311,7 +316,7 @@ func configureNetwork(ctx context.Context, debug bool) error {
 	if err := chromedp.Run(ctx, network.SetBlockedURLs(blockedURLPatterns)); err != nil {
 		return err
 	}
-	debugf(debug, "network blocking enabled (%d patterns)", len(blockedURLPatterns))
+	logging.Debugf(debug, "network blocking enabled (%d patterns)", len(blockedURLPatterns))
 	return nil
 }
 
@@ -321,10 +326,10 @@ func captureHTML(ctx context.Context, debug bool) (string, error) {
 		start := time.Now()
 		html, err := captureOuterHTML(ctx, sel, 3*time.Second)
 		if err == nil && strings.TrimSpace(html) != "" {
-			debugf(debug, "html captured from %s in %s", sel, time.Since(start))
+			logging.Debugf(debug, "html captured from %s in %s", sel, time.Since(start))
 			return html, nil
 		}
-		debugf(debug, "html capture failed (%s): %v", sel, err)
+		logging.Debugf(debug, "html capture failed (%s): %v", sel, err)
 	}
 	return "", fmt.Errorf("no html captured")
 }
@@ -339,17 +344,9 @@ func captureOuterHTML(ctx context.Context, selector string, timeout time.Duratio
 
 func debugStep(enabled bool, message string) chromedp.ActionFunc {
 	return chromedp.ActionFunc(func(context.Context) error {
-		debugf(enabled, message)
+		logging.Debugf(enabled, message)
 		return nil
 	})
-}
-
-func debugf(enabled bool, format string, args ...any) {
-	if !enabled {
-		return
-	}
-	ts := time.Now().Format(time.RFC3339Nano)
-	fmt.Fprintf(os.Stderr, "debug %s "+format+"\n", append([]any{ts}, args...)...)
 }
 
 func (a *Article) ToMarkdown() string {

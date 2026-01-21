@@ -25,6 +25,11 @@ cd economist-cli
 # Build and install (auto-signs on macOS)
 make install
 
+# Ensure ~/bin is on your PATH
+mkdir -p ~/bin
+# Add to shell config (e.g. ~/.zshrc):
+#   export PATH="$HOME/bin:$PATH"
+
 # Or manually:
 go build -o economist .
 codesign -s - economist  # macOS only

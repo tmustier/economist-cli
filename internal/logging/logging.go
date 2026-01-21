@@ -1,4 +1,4 @@
-package cmd
+package logging
 
 import (
 	"fmt"
@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-func tracef(format string, args ...any) {
-	if !debugMode {
+func Debugf(enabled bool, format string, args ...any) {
+	if !enabled {
 		return
 	}
 	ts := time.Now().Format(time.RFC3339Nano)
