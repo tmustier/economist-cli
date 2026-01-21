@@ -91,11 +91,16 @@ func Fetch(articleURL string, opts FetchOptions) (*Article, error) {
 
 	navStart := time.Now()
 	var html string
+	debugf(opts.Debug, "navigate start")
 	err = chromedp.Run(ctx,
 		chromedp.Navigate(articleURL),
+		debugStep(opts.Debug, "navigate done"),
 		chromedp.WaitReady("body", chromedp.ByQuery),
+		debugStep(opts.Debug, "body ready"),
 		waitForArticleSelector(articleWaitTimeout),
+		debugStep(opts.Debug, "article selector checked"),
 		chromedp.OuterHTML("html", &html),
+		debugStep(opts.Debug, "html captured"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load page: %w", err)
@@ -298,6 +303,13 @@ func configureNetwork(ctx context.Context, debug bool) error {
 	}
 	debugf(debug, "network blocking enabled (%d patterns)", len(blockedURLPatterns))
 	return nil
+}
+
+func debugStep(enabled bool, message string) chromedp.ActionFunc {
+	return chromedp.ActionFunc(func(context.Context) error {
+		debugf(enabled, message)
+		return nil
+	})
 }
 
 func debugf(enabled bool, format string, args ...any) {

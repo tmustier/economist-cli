@@ -265,7 +265,11 @@ func Serve() error {
 		fetchMu.Lock()
 		defer fetchMu.Unlock()
 
+		start := time.Now()
+		debugDaemon(req.Debug, "fetch start url=%s", req.URL)
 		art, err := article.Fetch(req.URL, article.FetchOptions{Debug: req.Debug})
+		debugDaemon(req.Debug, "fetch done in %s err=%v", time.Since(start), err)
+
 		resp := FetchResponse{}
 		if err != nil {
 			resp.Error = err.Error()
@@ -347,4 +351,12 @@ func isConnRefused(err error) bool {
 		}
 	}
 	return false
+}
+
+func debugDaemon(enabled bool, format string, args ...any) {
+	if !enabled {
+		return
+	}
+	ts := time.Now().Format(time.RFC3339Nano)
+	fmt.Fprintf(os.Stderr, "debug %s daemon: "+format+"\n", append([]any{ts}, args...)...)
 }
