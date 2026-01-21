@@ -15,7 +15,8 @@ var sectionsCmd = &cobra.Command{
 }
 
 func runSections(cmd *cobra.Command, args []string) {
-	fmt.Println("📚 Available sections:\n")
+	fmt.Println("📚 Available sections:")
+	fmt.Println()
 
 	// Group aliases by canonical path
 	pathToAliases := make(map[string][]string)
@@ -49,7 +50,8 @@ func runSections(cmd *cobra.Command, args []string) {
 		fmt.Println()
 	}
 
-	fmt.Println("\nUsage: economist headlines <section>")
+	fmt.Println()
+	fmt.Println("Usage: economist headlines <section>")
 }
 
 func shortestString(strs []string) string {

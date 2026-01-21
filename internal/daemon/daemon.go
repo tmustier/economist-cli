@@ -190,9 +190,9 @@ func Fetch(ctx context.Context, url string, debug bool) (*article.Article, error
 		case "paywall":
 			return nil, appErrors.PaywallError{}
 		case "user":
-			return nil, appErrors.NewUserError(payload.Error)
+			return nil, appErrors.NewUserError("%s", payload.Error)
 		default:
-			return nil, fmt.Errorf(payload.Error)
+			return nil, fmt.Errorf("%s", payload.Error)
 		}
 	}
 	if payload.Article == nil {

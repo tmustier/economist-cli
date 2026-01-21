@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
 	"github.com/tmustier/economist-cli/internal/browser"
 	"github.com/tmustier/economist-cli/internal/config"
@@ -21,6 +22,36 @@ const (
 	articleReadySelector = "article h1, h1.article__headline, [data-test-id='headline'], article"
 	articleWaitTimeout   = 8 * time.Second
 )
+
+var blockedURLPatterns = []string{
+	"*.png",
+	"*.jpg",
+	"*.jpeg",
+	"*.gif",
+	"*.webp",
+	"*.svg",
+	"*.woff",
+	"*.woff2",
+	"*.ttf",
+	"*.otf",
+	"*.mp4",
+	"*.mp3",
+	"*.m4a",
+	"*.mov",
+	"*.avi",
+	"*.m3u8",
+	"*doubleclick.net/*",
+	"*googletagmanager.com/*",
+	"*google-analytics.com/*",
+	"*googlesyndication.com/*",
+	"*adservice.google.com/*",
+	"*adsystem.com/*",
+	"*adsrvr.org/*",
+	"*scorecardresearch.com/*",
+	"*criteo.com/*",
+	"*taboola.com/*",
+	"*outbrain.com/*",
+}
 
 type Article struct {
 	Title         string
@@ -53,6 +84,10 @@ func Fetch(articleURL string, opts FetchOptions) (*Article, error) {
 
 	// Inject saved cookies (ignore errors - will just hit paywall)
 	_ = browser.InjectCookies(ctx, cfg.Cookies)
+
+	if err := configureNetwork(ctx, opts.Debug); err != nil {
+		debugf(opts.Debug, "network blocking error: %v", err)
+	}
 
 	navStart := time.Now()
 	var html string
@@ -249,6 +284,20 @@ func waitForArticleSelector(timeout time.Duration) chromedp.ActionFunc {
 		_ = chromedp.Run(waitCtx, chromedp.WaitVisible(articleReadySelector, chromedp.ByQuery))
 		return nil
 	})
+}
+
+func configureNetwork(ctx context.Context, debug bool) error {
+	if len(blockedURLPatterns) == 0 {
+		return nil
+	}
+	if err := chromedp.Run(ctx, network.Enable()); err != nil {
+		return err
+	}
+	if err := chromedp.Run(ctx, network.SetBlockedURLs(blockedURLPatterns)); err != nil {
+		return err
+	}
+	debugf(debug, "network blocking enabled (%d patterns)", len(blockedURLPatterns))
+	return nil
 }
 
 func debugf(enabled bool, format string, args ...any) {

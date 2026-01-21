@@ -31,6 +31,7 @@ func headlessExecAllocatorOptions(debug bool) []chromedp.ExecAllocatorOption {
 		chromedp.Flag("disable-gpu", true),
 		chromedp.Flag("no-sandbox", true),
 		chromedp.Flag("disable-dev-shm-usage", true),
+		chromedp.Flag("blink-settings", "imagesEnabled=false"),
 		chromedp.UserAgent(UserAgent),
 	)
 	if !debug {
