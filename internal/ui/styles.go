@@ -2,7 +2,11 @@ package ui
 
 import "github.com/charmbracelet/lipgloss"
 
-const HighlightColor = "124"
+const (
+	HighlightColor = "124"
+	BodyColorLight = "234"
+	BodyColorDark  = "252"
+)
 
 type BrowseStyles struct {
 	Header   lipgloss.Style
@@ -59,7 +63,7 @@ func NewArticleStyles(noColor bool) ArticleStyles {
 	subtitle := lipgloss.NewStyle().Faint(true)
 	date := lipgloss.NewStyle().Faint(true)
 	rule := lipgloss.NewStyle().Faint(true)
-	body := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "234", Dark: "252"})
+	body := lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: BodyColorLight, Dark: BodyColorDark})
 
 	if noColor {
 		overtitle = lipgloss.NewStyle()

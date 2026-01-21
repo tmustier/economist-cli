@@ -122,10 +122,13 @@ func RenderArticleBodyBase(markdown string, opts ArticleRenderOptions) (string, 
 	}
 
 	styles := glamour.DarkStyleConfig
+	bodyColor := BodyColorDark
 	if !termenv.HasDarkBackground() {
 		styles = glamour.LightStyleConfig
+		bodyColor = BodyColorLight
 	}
 	styles.Document.Margin = uintPtr(0)
+	styles.Document.Color = &bodyColor
 
 	optsList := []glamour.TermRendererOption{
 		glamour.WithStyles(styles),
@@ -146,22 +149,11 @@ func RenderArticleBodyBase(markdown string, opts ArticleRenderOptions) (string, 
 }
 
 func ReflowArticleBody(base string, styles ArticleStyles, opts ArticleRenderOptions) string {
-	contentWidth := resolveContentWidth(opts)
-	indent := ArticleIndent(opts)
-	if indent > 0 {
-		if contentWidth <= indent {
-			indent = 0
-		} else {
-			contentWidth -= indent
-		}
-	}
-
-	columnWidth, useColumns := resolveColumnWidth(contentWidth, opts.TwoColumn)
-
-	wrapWidth := contentWidth
-	if useColumns {
-		wrapWidth = columnWidth
-	}
+	layout := resolveArticleLayout(opts)
+	indent := layout.Indent
+	columnWidth := layout.ColumnWidth
+	useColumns := layout.UseColumns
+	wrapWidth := layout.WrapWidth
 
 	body := base
 	if wrapWidth > 0 {

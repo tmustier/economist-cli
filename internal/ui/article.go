@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/tmustier/economist-cli/internal/article"
@@ -44,7 +43,8 @@ func ArticleFooter(art *article.Article, styles ArticleStyles) string {
 	sb.WriteString("\n\n")
 	sb.WriteString(styles.Rule.Render("--------"))
 	sb.WriteString("\n\n")
-	sb.WriteString(fmt.Sprintf("🔗 %s\n", art.URL))
+	sb.WriteString(styles.Body.Render(art.URL))
+	sb.WriteString("\n")
 	return sb.String()
 }
 

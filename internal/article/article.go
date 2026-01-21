@@ -380,7 +380,8 @@ func (a *Article) ToMarkdown() string {
 	sb.WriteString("---\n\n")
 	sb.WriteString(a.Content)
 	sb.WriteString("\n\n---\n")
-	sb.WriteString(fmt.Sprintf("🔗 %s\n", a.URL))
+	sb.WriteString(a.URL)
+	sb.WriteString("\n")
 
 	return sb.String()
 }
