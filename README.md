@@ -66,7 +66,9 @@ economist read "https://www.economist.com/finance-and-economics/2026/01/19/artic
 Interactive TUI for browsing headlines and reading articles.
 
 - `↑`/`↓` or `j`/`k` to navigate
+- `/` to search (fuzzy filter)
 - `Enter` to read selected article
+- `Esc` to clear search / quit
 - `q` to quit
 
 Requires an interactive terminal. For scripts, use `headlines --json`.
