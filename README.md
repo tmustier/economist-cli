@@ -66,6 +66,7 @@ economist read "https://www.economist.com/finance-and-economics/2026/01/19/artic
 Interactive TUI for browsing headlines and reading articles.
 
 - `↑`/`↓` to navigate
+- `←`/`→` to page
 - Type to search (fuzzy filter, digits jump to item)
 - `Enter` to read selected article
 - `Esc` to clear search / quit
