@@ -3,11 +3,11 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"unicode"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	appErrors "github.com/tmustier/economist-cli/internal/errors"
 	"github.com/tmustier/economist-cli/internal/rss"
@@ -20,7 +20,7 @@ var browseCmd = &cobra.Command{
 	Short: "Browse headlines interactively",
 	Long: `Browse headlines in an interactive TUI.
 
-Use ↑/↓ or j/k to navigate, Enter to read, / to search, q to quit.
+Use ↑/↓ to navigate, Enter to read, type to search, q to quit.
 
 Examples:
   economist browse
@@ -96,7 +96,6 @@ type model struct {
 	selected      *rss.Item
 	width         int
 	height        int
-	searching     bool
 	searchQuery   string
 }
 
@@ -115,16 +114,26 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
-func (m *model) filterItems() {
-	if m.searchQuery == "" {
+func (m *model) applySearch() {
+	query := strings.TrimSpace(m.searchQuery)
+	if query == "" {
 		m.filteredItems = m.allItems
+		return
+	}
+
+	if isDigits(query) {
+		m.filteredItems = m.allItems
+		idx, err := strconv.Atoi(query)
+		if err == nil && idx > 0 && idx <= len(m.allItems) {
+			m.cursor = idx - 1
+		}
 		return
 	}
 
 	var filtered []rss.Item
 	for _, item := range m.allItems {
 		text := item.CleanTitle() + " " + item.CleanDescription()
-		if search.Match(text, m.searchQuery) {
+		if search.Match(text, query) {
 			filtered = append(filtered, item)
 		}
 	}
@@ -136,68 +145,69 @@ func (m *model) filterItems() {
 	}
 }
 
+func isDigits(input string) bool {
+	for _, r := range input {
+		if !unicode.IsDigit(r) {
+			return false
+		}
+	}
+	return input != ""
+}
+
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Search mode input handling
-		if m.searching {
-			switch msg.Type {
-			case tea.KeyEsc:
-				m.searching = false
-				m.searchQuery = ""
-				m.filterItems()
-			case tea.KeyEnter:
-				m.searching = false
-				// Keep the filter active
-			case tea.KeyBackspace:
-				if len(m.searchQuery) > 0 {
-					m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
-					m.filterItems()
-				}
-			case tea.KeyRunes:
-				for _, r := range msg.Runes {
-					if unicode.IsPrint(r) {
-						m.searchQuery += string(r)
-					}
-				}
-				m.filterItems()
-			case tea.KeySpace:
-				m.searchQuery += " "
-				m.filterItems()
+		switch msg.String() {
+		case "ctrl+c":
+			return m, tea.Quit
+		case "q":
+			if m.searchQuery == "" {
+				return m, tea.Quit
 			}
-			return m, nil
 		}
 
-		// Normal mode
-		switch msg.String() {
-		case "q", "ctrl+c":
-			return m, tea.Quit
-		case "esc":
+		switch msg.Type {
+		case tea.KeyEsc:
 			if m.searchQuery != "" {
 				m.searchQuery = ""
-				m.filterItems()
+				m.applySearch()
 			} else {
 				return m, tea.Quit
 			}
-		case "/":
-			m.searching = true
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
+		case tea.KeyBackspace:
+			if len(m.searchQuery) > 0 {
+				m.searchQuery = m.searchQuery[:len(m.searchQuery)-1]
+				m.applySearch()
 			}
-		case "down", "j":
-			if m.cursor < len(m.filteredItems)-1 {
-				m.cursor++
-			}
-		case "enter":
+		case tea.KeyEnter:
 			if len(m.filteredItems) > 0 && m.cursor < len(m.filteredItems) {
 				m.selected = &m.filteredItems[m.cursor]
 				return m, tea.Quit
 			}
-		case "home", "g":
+		case tea.KeyUp:
+			if m.cursor > 0 {
+				m.cursor--
+			}
+		case tea.KeyDown:
+			if m.cursor < len(m.filteredItems)-1 {
+				m.cursor++
+			}
+		case tea.KeyHome:
 			m.cursor = 0
-		case "end", "G":
+		case tea.KeyEnd:
 			m.cursor = max(0, len(m.filteredItems)-1)
+		case tea.KeySpace:
+			if m.searchQuery != "" {
+				m.searchQuery += " "
+				m.applySearch()
+			}
+		case tea.KeyRunes:
+			for _, r := range msg.Runes {
+				if unicode.IsPrint(r) {
+					m.searchQuery += string(r)
+				}
+			}
+			m.applySearch()
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
@@ -207,35 +217,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	// Styles
-	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("205"))
-	titleStyle := lipgloss.NewStyle().Bold(true)
-	selectedStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("196"))
-	dimStyle := lipgloss.NewStyle().Faint(true)
-	helpStyle := lipgloss.NewStyle().Faint(true)
-	searchStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("220"))
-
-	if noColor {
-		headerStyle = lipgloss.NewStyle().Bold(true)
-		titleStyle = lipgloss.NewStyle().Bold(true)
-		selectedStyle = lipgloss.NewStyle().Bold(true)
-		dimStyle = lipgloss.NewStyle()
-		helpStyle = lipgloss.NewStyle()
-		searchStyle = lipgloss.NewStyle()
-	}
+	styles := ui.NewBrowseStyles(noColor)
 
 	var b strings.Builder
 
 	// Header
-	header := headerStyle.Render(m.sectionTitle)
+	header := styles.Header.Render(m.sectionTitle)
 	b.WriteString(header + "\n")
 	b.WriteString(strings.Repeat("─", min(m.width, 60)) + "\n")
 
 	// Search bar
-	if m.searching {
-		b.WriteString(searchStyle.Render("/ ") + m.searchQuery + "█\n")
-	} else if m.searchQuery != "" {
-		b.WriteString(dimStyle.Render(fmt.Sprintf("filter: %s", m.searchQuery)) + "\n")
+	if m.searchQuery != "" {
+		b.WriteString(styles.Search.Render(fmt.Sprintf("search: %s", m.searchQuery)) + "\n")
 	} else {
 		b.WriteString("\n")
 	}
@@ -243,13 +236,10 @@ func (m model) View() string {
 	items := m.filteredItems
 
 	if len(items) == 0 {
-		b.WriteString("\n" + dimStyle.Render("  No matching articles") + "\n")
+		b.WriteString("\n" + styles.Dim.Render("  No matching articles") + "\n")
 	} else {
 		// Calculate visible items based on terminal height
 		reservedLines := 7 // header + search + footer
-		if m.searchQuery != "" || m.searching {
-			reservedLines++
-		}
 		visibleItems := m.height - reservedLines
 		if visibleItems < 5 {
 			visibleItems = 5
@@ -280,9 +270,9 @@ func (m model) View() string {
 		// Items
 		for i := start; i < end; i++ {
 			item := items[i]
-			lineStyle := titleStyle
+			lineStyle := styles.Title
 			if i == m.cursor {
-				lineStyle = selectedStyle
+				lineStyle = styles.Selected
 			}
 
 			num := fmt.Sprintf("%*d. ", numWidth, i+1)
@@ -294,7 +284,7 @@ func (m model) View() string {
 			b.WriteString(fmt.Sprintf("%s%s%s\n",
 				num,
 				lineStyle.Render(paddedTitle),
-				dimStyle.Render(date),
+				styles.Dim.Render(date),
 			))
 
 			desc := item.CleanDescription()
@@ -304,7 +294,7 @@ func (m model) View() string {
 					maxDescLen = ui.MinTitleWidth
 				}
 				desc = ui.Truncate(desc, maxDescLen)
-				b.WriteString(fmt.Sprintf("    %s\n", dimStyle.Render(desc)))
+				b.WriteString(fmt.Sprintf("    %s\n", styles.Dim.Render(desc)))
 			}
 
 			b.WriteString("\n")
@@ -312,19 +302,14 @@ func (m model) View() string {
 
 		// Scroll indicator
 		if len(items) > maxVisible {
-			b.WriteString(dimStyle.Render(fmt.Sprintf("\n  (%d/%d)", m.cursor+1, len(items))))
+			b.WriteString(styles.Dim.Render(fmt.Sprintf("\n  (%d/%d)", m.cursor+1, len(items))))
 		}
 	}
 
 	// Footer
 	b.WriteString("\n\n")
-	if m.searching {
-		help := helpStyle.Render("type to search • enter confirm • esc cancel")
-		b.WriteString(help)
-	} else {
-		help := helpStyle.Render("↑/↓ navigate • enter read • / search • q quit")
-		b.WriteString(help)
-	}
+	help := styles.Help.Render("↑/↓ navigate • enter read • type to search • esc clear • q quit")
+	b.WriteString(help)
 
 	return b.String()
 }

@@ -10,7 +10,7 @@ CLI tool to browse and read The Economist articles.
 ## Commands
 
 ```bash
-# Interactive browse (TUI, human-only, supports / to search)
+# Interactive browse (TUI, human-only, type to search)
 economist browse [section]
 
 # Headlines (default section: leaders)
