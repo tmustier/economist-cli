@@ -91,7 +91,6 @@ func Fetch(articleURL string, opts FetchOptions) (*Article, error) {
 	}
 
 	navStart := time.Now()
-	var html string
 	debugf(opts.Debug, "navigate start")
 	err = chromedp.Run(ctx,
 		navigateNoWait(articleURL),
@@ -100,11 +99,14 @@ func Fetch(articleURL string, opts FetchOptions) (*Article, error) {
 		debugStep(opts.Debug, "body ready"),
 		waitForArticleSelector(articleWaitTimeout),
 		debugStep(opts.Debug, "article selector checked"),
-		chromedp.OuterHTML("html", &html),
-		debugStep(opts.Debug, "html captured"),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load page: %w", err)
+	}
+
+	html, err := captureHTML(ctx, opts.Debug)
+	if err != nil {
+		return nil, fmt.Errorf("failed to capture html: %w", err)
 	}
 	debugf(opts.Debug, "page loaded in %s", time.Since(navStart))
 
@@ -311,6 +313,28 @@ func configureNetwork(ctx context.Context, debug bool) error {
 	}
 	debugf(debug, "network blocking enabled (%d patterns)", len(blockedURLPatterns))
 	return nil
+}
+
+func captureHTML(ctx context.Context, debug bool) (string, error) {
+	selectors := []string{"article", "main", "body", "html"}
+	for _, sel := range selectors {
+		start := time.Now()
+		html, err := captureOuterHTML(ctx, sel, 3*time.Second)
+		if err == nil && strings.TrimSpace(html) != "" {
+			debugf(debug, "html captured from %s in %s", sel, time.Since(start))
+			return html, nil
+		}
+		debugf(debug, "html capture failed (%s): %v", sel, err)
+	}
+	return "", fmt.Errorf("no html captured")
+}
+
+func captureOuterHTML(ctx context.Context, selector string, timeout time.Duration) (string, error) {
+	var html string
+	capCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	err := chromedp.Run(capCtx, chromedp.OuterHTML(selector, &html, chromedp.ByQuery))
+	return html, err
 }
 
 func debugStep(enabled bool, message string) chromedp.ActionFunc {
