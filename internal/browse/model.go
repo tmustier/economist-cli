@@ -233,7 +233,7 @@ func (m Model) updateArticle(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "ctrl+c", "q":
 		return m, tea.Quit
-	case "b":
+	case "b", "left":
 		m.mode = modeBrowse
 		m.loading = false
 		m.pendingURL = ""

@@ -2,6 +2,7 @@ package browse
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/tmustier/economist-cli/internal/ui"
@@ -125,9 +126,10 @@ func (m Model) articleView() string {
 	}
 
 	start := ui.Min(m.scroll, m.maxArticleScroll())
-	end := ui.Min(len(m.articleLines), start+m.articleViewHeight())
+	viewHeight := m.articleViewHeight()
+	end := ui.Min(len(m.articleLines), start+viewHeight)
 	b.WriteString(strings.Join(m.articleLines[start:end], "\n"))
-	b.WriteString("\n\n")
+	b.WriteString("\n")
 
 	columnLabel := "1-col"
 	if m.twoColumn {
@@ -136,6 +138,29 @@ func (m Model) articleView() string {
 	help := fmt.Sprintf(articleHelpFormat, columnLabel)
 
 	indent := ui.ArticleIndent(m.articleRenderOptions())
+
+	showMore := end < len(m.articleLines)
+	if showMore {
+		pct := 0
+		if len(m.articleLines) > 0 {
+			pct = int(math.Round(float64(end) / float64(len(m.articleLines)) * 100))
+			if pct < 1 {
+				pct = 1
+			}
+			if pct > 99 {
+				pct = 99
+			}
+		}
+		hint := fmt.Sprintf("↓ more · %d%%", pct)
+		hintLine := styles.Dim.Render(hint)
+		if indent > 0 {
+			b.WriteString(ui.IndentBlock(hintLine, indent))
+		} else {
+			b.WriteString(hintLine)
+		}
+	}
+	b.WriteString("\n")
+
 	if indent > 0 {
 		helper := ui.IndentBlock(styles.Help.Render(help), indent)
 		b.WriteString(helper)
