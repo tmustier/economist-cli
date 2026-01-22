@@ -1,5 +1,9 @@
 # Release Notes
 
+## v0.2.2
+
+- **Layout**: apply symmetric padding in browse and article views for centered columns.
+
 ## v0.2.1
 
 - **Reader layout**: keep article headers full width when body is in two-column mode.

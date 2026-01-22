@@ -151,6 +151,11 @@ func (m Model) browseView() (string, string) {
 		footer = ui.IndentBlock(footer, indent)
 	}
 
+	if termWidth > 0 {
+		content = ui.PadBlockRight(content, termWidth)
+		footer = ui.PadBlockRight(footer, termWidth)
+	}
+
 	return content, footer
 }
 
@@ -167,6 +172,10 @@ func (m Model) articleView() (string, string) {
 	}
 	ruleStyles := ui.NewStyles(ui.CurrentTheme(), m.opts.NoColor)
 	divider := ui.SectionRule(contentWidth, ruleStyles)
+	padWidth := opts.TermWidth
+	if padWidth <= 0 {
+		padWidth = contentWidth
+	}
 
 	var b strings.Builder
 	if m.loading {
@@ -176,7 +185,7 @@ func (m Model) articleView() (string, string) {
 		if indent > 0 {
 			footer = ui.IndentBlock(footer, indent)
 		}
-		return content, footer
+		return ui.PadBlockRight(content, padWidth), ui.PadBlockRight(footer, padWidth)
 	}
 
 	if m.articleErr != nil {
@@ -188,7 +197,7 @@ func (m Model) articleView() (string, string) {
 			content = ui.IndentBlock(content, indent)
 			footer = ui.IndentBlock(footer, indent)
 		}
-		return content, footer
+		return ui.PadBlockRight(content, padWidth), ui.PadBlockRight(footer, padWidth)
 	}
 
 	if len(m.articleLines) == 0 {
@@ -200,7 +209,7 @@ func (m Model) articleView() (string, string) {
 			content = ui.IndentBlock(content, indent)
 			footer = ui.IndentBlock(footer, indent)
 		}
-		return content, footer
+		return ui.PadBlockRight(content, padWidth), ui.PadBlockRight(footer, padWidth)
 	}
 
 	start := ui.Min(m.scroll, m.maxArticleScroll())
@@ -245,7 +254,7 @@ func (m Model) articleView() (string, string) {
 		footer = ui.IndentBlock(footer, indent)
 	}
 
-	return content, footer
+	return ui.PadBlockRight(content, padWidth), ui.PadBlockRight(footer, padWidth)
 }
 
 func (m Model) loadingSkeletonView() string {
