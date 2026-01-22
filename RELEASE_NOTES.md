@@ -1,5 +1,9 @@
 # Release Notes
 
+## v0.3.0
+
+- **Browse/reader**: support Ctrl+D to quit.
+
 ## v0.2.9
 
 - **Reader layout**: increase multi-column minimum height to 24 lines.

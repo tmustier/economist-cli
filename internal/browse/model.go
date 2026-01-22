@@ -249,7 +249,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m Model) updateBrowse(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "ctrl+c":
+	case "ctrl+c", "ctrl+d":
 		return m, tea.Quit
 	case "q":
 		if m.searchQuery == "" {
@@ -324,7 +324,7 @@ func (m Model) updateBrowse(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) updateArticle(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "ctrl+c", "q":
+	case "ctrl+c", "ctrl+d", "q":
 		return m, tea.Quit
 	case "b", "enter":
 		m.mode = modeBrowse
