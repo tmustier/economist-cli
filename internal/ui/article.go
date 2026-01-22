@@ -14,9 +14,12 @@ func RenderArticleHeader(art *article.Article, styles ArticleStyles, opts Articl
 	wrapWidth := layout.WrapWidth
 
 	sb.WriteString("\n")
-	writeWrapped(&sb, art.Overtitle, wrapWidth, func(line string) string {
+	wroteOvertitle := writeWrapped(&sb, art.Overtitle, wrapWidth, func(line string) string {
 		return renderOvertitle(line, styles)
 	})
+	if wroteOvertitle && (art.Title != "" || art.Subtitle != "" || art.DateLine != "") {
+		sb.WriteString("\n")
+	}
 	writeWrapped(&sb, art.Title, wrapWidth, func(line string) string {
 		return styles.Title.Render(line)
 	})
@@ -64,14 +67,15 @@ func HighlightTrailingMarker(text string, styles ArticleStyles) string {
 	return text[:idx] + marker + text[idx+len("■"):]
 }
 
-func writeWrapped(sb *strings.Builder, text string, width int, render func(string) string) {
+func writeWrapped(sb *strings.Builder, text string, width int, render func(string) string) bool {
 	if text == "" {
-		return
+		return false
 	}
 	for _, line := range wrapHeaderText(text, width) {
 		sb.WriteString(render(line))
 		sb.WriteString("\n")
 	}
+	return true
 }
 
 func wrapHeaderText(text string, width int) []string {

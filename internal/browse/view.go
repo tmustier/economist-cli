@@ -10,9 +10,9 @@ import (
 
 func (m Model) View() string {
 	if m.mode == modeArticle {
-		return m.articleView()
+		return padView(m.articleView(), m.height)
 	}
-	return m.browseView()
+	return padView(m.browseView(), m.height)
 }
 
 func (m Model) browseView() string {
@@ -140,6 +140,7 @@ func (m Model) articleView() string {
 	indent := ui.ArticleIndent(m.articleRenderOptions())
 
 	showMore := end < len(m.articleLines)
+	hintLine := ""
 	if showMore {
 		pct := 0
 		if len(m.articleLines) > 0 {
@@ -152,12 +153,12 @@ func (m Model) articleView() string {
 			}
 		}
 		hint := fmt.Sprintf("%d%% · more ↓", pct)
-		hintLine := styles.Dim.Render(hint)
-		if indent > 0 {
-			b.WriteString(ui.IndentBlock(hintLine, indent))
-		} else {
-			b.WriteString(hintLine)
-		}
+		hintLine = styles.Dim.Render(hint)
+	}
+	if indent > 0 {
+		b.WriteString(ui.IndentBlock(hintLine, indent))
+	} else {
+		b.WriteString(hintLine)
 	}
 	b.WriteString("\n")
 
@@ -179,4 +180,15 @@ func (m Model) articleView() string {
 	}
 
 	return b.String()
+}
+
+func padView(view string, height int) string {
+	if height <= 0 {
+		return view
+	}
+	lines := strings.Count(view, "\n") + 1
+	if lines >= height {
+		return view
+	}
+	return view + strings.Repeat("\n", height-lines)
 }

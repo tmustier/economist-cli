@@ -345,7 +345,11 @@ func (m Model) pageSize() int {
 }
 
 func (m Model) articleViewHeight() int {
-	visible := m.height - articleReservedLines
+	reserved := articleReservedLines
+	if m.opts.Debug {
+		reserved++
+	}
+	visible := m.height - reserved
 	if visible < articleMinVisibleLines {
 		visible = articleMinVisibleLines
 	}

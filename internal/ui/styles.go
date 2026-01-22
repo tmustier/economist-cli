@@ -135,7 +135,7 @@ func NewArticleStyles(noColor bool) ArticleStyles {
 	overtitle := body.Copy()
 	section := lipgloss.NewStyle().Bold(true).Foreground(theme.Brand)
 	title := lipgloss.NewStyle().Bold(true).Foreground(theme.Brand)
-	subtitle := body.Copy()
+	subtitle := lipgloss.NewStyle().Foreground(theme.TextMuted)
 	date := lipgloss.NewStyle().Foreground(theme.TextFaint).Faint(true)
 	rule := lipgloss.NewStyle().Foreground(theme.Border)
 

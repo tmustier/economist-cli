@@ -7,6 +7,6 @@ const (
 	browseReservedLines    = 7
 	browseMinVisibleLines  = 5
 	browseItemHeight       = 3
-	articleReservedLines   = 3
+	articleReservedLines   = 2
 	articleMinVisibleLines = 5
 )
