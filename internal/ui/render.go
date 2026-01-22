@@ -16,7 +16,7 @@ const (
 	columnGap      = 4
 	minColumnWidth = 32
 	maxColumnWidth = MaxReadableWidth
-	minColumnLines = 18
+	minColumnLines = 24
 	baseWrapWidth  = 2000
 	bodyIndent     = 2
 )

@@ -1,5 +1,9 @@
 # Release Notes
 
+## v0.2.9
+
+- **Reader layout**: increase multi-column minimum height to 24 lines.
+
 ## v0.2.8
 
 - **Demo mode**: add historical fixtures (Sputnik, cybernetics, space travel, Kennedy election) and load demo metadata from a single index with flexible date parsing.
