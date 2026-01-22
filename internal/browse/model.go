@@ -299,7 +299,7 @@ func (m *Model) refreshArticleLines() {
 		header = ui.IndentBlock(header, indent)
 	}
 
-	footer := ui.ArticleFooter(m.article, styles)
+	footer := ui.ArticleFooter(m.article, styles, opts)
 	if indent > 0 {
 		footer = ui.IndentBlock(footer, indent)
 	}

@@ -60,7 +60,7 @@ func RenderArticle(art *article.Article, opts ArticleRenderOptions) (string, err
 		header = IndentBlock(header, indent)
 	}
 
-	footer := ArticleFooter(art, styles)
+	footer := ArticleFooter(art, styles, opts)
 	if indent > 0 {
 		footer = IndentBlock(footer, indent)
 	}

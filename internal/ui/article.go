@@ -42,10 +42,12 @@ func ArticleBodyMarkdown(art *article.Article) string {
 	return sb.String()
 }
 
-func ArticleFooter(art *article.Article, styles ArticleStyles) string {
+func ArticleFooter(art *article.Article, styles ArticleStyles, opts ArticleRenderOptions) string {
 	var sb strings.Builder
+	layout := resolveArticleLayout(opts)
+	accentStyles := NewStyles(CurrentTheme(), opts.NoColor)
 	sb.WriteString("\n\n")
-	sb.WriteString(styles.Rule.Render("--------"))
+	sb.WriteString(AccentRule(layout.ContentWidth, accentStyles))
 	sb.WriteString("\n\n")
 	sb.WriteString(styles.Body.Render(art.URL))
 	sb.WriteString("\n")

@@ -11,7 +11,7 @@ func TestArticleFooterFormatting(t *testing.T) {
 	styles := NewArticleStyles(false)
 	art := &article.Article{URL: "https://example.com/test"}
 
-	footer := ArticleFooter(art, styles)
+	footer := ArticleFooter(art, styles, ArticleRenderOptions{WrapWidth: 60})
 	if strings.Contains(footer, "🔗") {
 		t.Fatalf("expected footer without emoji, got %q", footer)
 	}
