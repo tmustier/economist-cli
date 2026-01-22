@@ -1,5 +1,10 @@
 # Release Notes
 
+## v0.2.6
+
+- **Reader layout**: multi-column mode now caps column count for short articles, centers the column block, and prevents column overlap.
+- **Reader UI**: columns hint now shows on/off state.
+
 ## v0.2.5
 
 - **Reader layout**: multi-column mode now caps column width and adds extra columns on wide terminals.
