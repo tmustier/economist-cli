@@ -21,6 +21,7 @@ const DefaultSection = "leaders"
 const demoSectionTitle = "Leaders - demo"
 
 var demoBaseDate = time.Date(2026, time.January, 22, 9, 0, 0, 0, time.UTC)
+var demoArchiveDate = time.Date(1940, time.September, 7, 9, 0, 0, 0, time.UTC)
 
 type Source struct {
 	sections map[string]sectionData
@@ -37,6 +38,7 @@ type demoArticle struct {
 	title    string
 	subtitle string
 	content  string
+	date     time.Time
 }
 
 func NewSource() *Source {
@@ -77,12 +79,14 @@ func (s *Source) addLeaders() {
 			title:    "Fair Exchange",
 			subtitle: "Destroyers for bases, and a new alliance",
 			content:  strings.TrimSpace(fairExchangeFixture),
+			date:     demoArchiveDate,
 		},
 		{
 			slug:     "german-europe",
 			title:    "German Europe",
 			subtitle: "Conquest and the limits of domination",
 			content:  strings.TrimSpace(germanEuropeFixture),
+			date:     demoArchiveDate,
 		},
 		{slug: "imagined-markets", title: "Imaginary markets and measured optimism", subtitle: "A fictional briefing on sentiment and supply"},
 		{slug: "soft-landing", title: "Why the demo economy always lands softly", subtitle: "Illustrative data without real-world stakes"},
@@ -93,6 +97,9 @@ func (s *Source) addLeaders() {
 	items := make([]rss.Item, 0, len(articles))
 	for i, entry := range articles {
 		published := demoBaseDate.AddDate(0, 0, -i)
+		if !entry.date.IsZero() {
+			published = entry.date
+		}
 		url := fmt.Sprintf("https://example.com/demo/%s", entry.slug)
 		items = append(items, rss.Item{
 			Title:       entry.title,
