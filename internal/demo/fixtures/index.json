@@ -40,6 +40,14 @@
     "source": "https://archive.org/details/sim_economist_1945-08-11"
   },
   {
+    "slug": "policy-for-korea",
+    "title": "Policy for Korea",
+    "subtitle": "Stalemate, MacArthur, and a new UN line",
+    "file": "policy-for-korea.txt",
+    "date": "1951-03-31",
+    "source": "https://archive.org/details/sim_economist_1951-03-31_160_5614"
+  },
+  {
     "slug": "human-use-of-human-beings",
     "title": "The Human Use of Human Beings",
     "subtitle": "Cybernetics and society",
@@ -88,12 +96,44 @@
     "source": "https://archive.org/details/sim_economist_1954-10-30"
   },
   {
+    "slug": "algerian-dilemma",
+    "title": "The Algerian Dilemma",
+    "subtitle": "Integration, identity, and the colonial contradiction",
+    "file": "algerian-dilemma.txt",
+    "date": "1955-10-01",
+    "source": "https://archive.org/details/sim_economist_1955-10-01_177"
+  },
+  {
     "slug": "freeing-electronics",
     "title": "Freeing Electronics",
     "subtitle": "AT&T, IBM, and the $40,000-a-month brains",
     "file": "freeing-electronics.txt",
     "date": "1956-02-04",
     "source": "https://archive.org/details/sim_economist_1956-02-04"
+  },
+  {
+    "slug": "ends-and-means-at-suez",
+    "title": "Ends and Means at Suez",
+    "subtitle": "Britain’s strategic dilemma over the canal",
+    "file": "ends-and-means-at-suez.txt",
+    "date": "1956-09-08",
+    "source": "https://archive.org/details/sim_economist_1956-09-08_180_5898"
+  },
+  {
+    "slug": "hungary-european-future",
+    "title": "Hungary and the European Future",
+    "subtitle": "After Budapest and the Soviet clampdown",
+    "file": "hungary-european-future.txt",
+    "date": "1956-11-10",
+    "source": "https://archive.org/details/sim_economist_1956-11-10_181_5907"
+  },
+  {
+    "slug": "asian-milestone",
+    "title": "Asian Milestone",
+    "subtitle": "Malaya’s independence and the end of empire",
+    "file": "asian-milestone.txt",
+    "date": "1957-08-31",
+    "source": "https://archive.org/details/sim_economist_1957-08-31_184_5949"
   },
   {
     "slug": "both-sides-moon",
