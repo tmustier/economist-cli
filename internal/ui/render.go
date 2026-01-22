@@ -185,6 +185,7 @@ func ReflowArticleBody(base string, styles ArticleStyles, opts ArticleRenderOpti
 	if wrapWidth > 0 {
 		body = wordwrap.String(body, wrapWidth)
 	}
+	body = normalizeParagraphSpacing(body)
 
 	if useColumns {
 		body = columnize(body, columnWidth)
@@ -252,6 +253,24 @@ func padRightANSI(text string, width int) string {
 		return text
 	}
 	return fmt.Sprintf("%s%s", text, strings.Repeat(" ", pad))
+}
+
+func normalizeParagraphSpacing(text string) string {
+	lines := strings.Split(text, "\n")
+	var out []string
+	blank := 0
+	for _, line := range lines {
+		if isLineBlank(line) {
+			blank++
+			if blank > 1 {
+				continue
+			}
+		} else {
+			blank = 0
+		}
+		out = append(out, line)
+	}
+	return strings.Join(out, "\n")
 }
 
 func trimLeadingBlankLines(lines []string) []string {
