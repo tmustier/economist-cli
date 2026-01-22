@@ -153,16 +153,14 @@ func printHeadlines(items []rss.Item, title string) {
 	numWidth := len(fmt.Sprintf("%d", len(items)))
 	prefixWidth := len(fmt.Sprintf("%*d. ", numWidth, len(items)))
 	dateWidth := ui.DefaultDateWidth
-	useCompactDates := contentWidth < prefixWidth+ui.MinTitleWidth+dateWidth
+	dateGap := ui.DefaultDateGap
+	useCompactDates := contentWidth < prefixWidth+ui.MinTitleWidth+dateWidth+dateGap
 	if useCompactDates {
 		dateWidth = len("02.01.06")
 	}
-	layout := ui.NewHeadlineLayout(contentWidth, prefixWidth, dateWidth)
+	layout := ui.NewHeadlineLayout(contentWidth, prefixWidth, dateWidth+dateGap)
 	prefixPad := strings.Repeat(" ", prefixWidth)
-	subtitleWidth := contentWidth - 4
-	if subtitleWidth < 1 {
-		subtitleWidth = 1
-	}
+	subtitleWidth := layout.TitleWidth
 
 	for i, item := range items {
 		num := fmt.Sprintf("%*d. ", numWidth, i+1)
@@ -181,7 +179,7 @@ func printHeadlines(items []rss.Item, title string) {
 			if idx == 0 {
 				paddedTitle := fmt.Sprintf("%-*s", layout.TitleWidth, line)
 				fmt.Printf("%s%s%s\n",
-					num,
+					styles.Title.Render(num),
 					styles.Title.Render(paddedTitle),
 					styles.Dim.Render(dateColumn),
 				)
@@ -197,10 +195,10 @@ func printHeadlines(items []rss.Item, title string) {
 		if desc := item.CleanDescription(); desc != "" {
 			for _, line := range ui.WrapLines(desc, subtitleWidth) {
 				if line == "" {
-					fmt.Printf("    \n")
+					fmt.Printf("%s\n", prefixPad)
 					continue
 				}
-				fmt.Printf("    %s\n", styles.Subtitle.Render(line))
+				fmt.Printf("%s%s\n", prefixPad, styles.Subtitle.Render(line))
 			}
 		}
 
