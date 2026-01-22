@@ -68,7 +68,18 @@ func (m Model) browseView() (string, string) {
 			maxVisible = 1
 		}
 
-		start, end := ui.VisibleRange(m.cursor, maxVisible, len(items))
+		start := m.browseStart
+		maxStart := ui.Max(0, len(items)-maxVisible)
+		if start > maxStart {
+			start = maxStart
+		}
+		if start < 0 {
+			start = 0
+		}
+		end := start + maxVisible
+		if end > len(items) {
+			end = len(items)
+		}
 
 		numWidth := len(fmt.Sprintf("%d", len(m.allItems)))
 		prefixWidth := len(fmt.Sprintf("%*d. ", numWidth, len(m.allItems)))

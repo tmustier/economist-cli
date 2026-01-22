@@ -1,5 +1,9 @@
 # Release Notes
 
+## v0.3.1
+
+- **Browse navigation**: keep list stable when moving within the visible window; page left/right preserves selection position.
+
 ## v0.3.0
 
 - **Browse/reader**: support Ctrl+D to quit.

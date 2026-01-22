@@ -50,6 +50,7 @@ type Model struct {
 	sectionErr          error
 
 	cursor      int
+	browseStart int
 	width       int
 	height      int
 	searchQuery string
@@ -129,6 +130,7 @@ func (m *Model) applySearch() {
 	query := strings.TrimSpace(m.searchQuery)
 	if query == "" {
 		m.filteredItems = m.allItems
+		m.ensureBrowseWindow()
 		return
 	}
 
@@ -138,6 +140,7 @@ func (m *Model) applySearch() {
 		if err == nil && idx > 0 && idx <= len(m.allItems) {
 			m.cursor = idx - 1
 		}
+		m.ensureBrowseWindow()
 		return
 	}
 
@@ -154,6 +157,7 @@ func (m *Model) applySearch() {
 	if m.cursor >= len(m.filteredItems) {
 		m.cursor = ui.Max(0, len(m.filteredItems)-1)
 	}
+	m.ensureBrowseWindow()
 }
 
 func isDigits(input string) bool {
@@ -210,6 +214,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.allItems = msg.items
 		m.filteredItems = msg.items
 		m.cursor = 0
+		m.browseStart = 0
 		m.applySearch()
 		return m, nil
 	case articleMsg:
@@ -242,6 +247,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		if m.mode == modeArticle && m.article != nil {
 			m.refreshArticleLines()
+		}
+		if m.mode == modeBrowse {
+			m.ensureBrowseWindow()
 		}
 	}
 	return m, nil
@@ -290,22 +298,78 @@ func (m Model) updateBrowse(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 	case tea.KeyUp:
 		if m.cursor > 0 {
-			m.cursor--
+			maxVisible := m.maxVisibleItems()
+			if m.cursor == m.browseStart && m.browseStart > 0 {
+				m.cursor--
+				m.browseStart--
+			} else {
+				m.cursor--
+			}
+			if maxVisible > 0 && m.cursor < m.browseStart {
+				m.browseStart = m.cursor
+			}
 		}
 	case tea.KeyDown:
 		if m.cursor < len(m.filteredItems)-1 {
-			m.cursor++
+			maxVisible := m.maxVisibleItems()
+			if maxVisible < 1 {
+				maxVisible = 1
+			}
+			lastVisible := m.browseStart + maxVisible - 1
+			if m.cursor == lastVisible {
+				m.cursor++
+				m.browseStart++
+			} else {
+				m.cursor++
+			}
+			maxStart := ui.Max(0, len(m.filteredItems)-maxVisible)
+			if m.browseStart > maxStart {
+				m.browseStart = maxStart
+			}
 		}
 	case tea.KeyLeft:
-		page := m.pageSize(len(m.filteredItems))
-		m.cursor = ui.Max(0, m.cursor-page)
+		itemCount := len(m.filteredItems)
+		if itemCount > 0 {
+			maxVisible := m.maxVisibleItems()
+			offset := m.cursor - m.browseStart
+			if offset < 0 {
+				offset = 0
+			} else if offset >= maxVisible {
+				offset = maxVisible - 1
+			}
+			m.browseStart -= maxVisible
+			if m.browseStart < 0 {
+				m.browseStart = 0
+			}
+			m.cursor = ui.Min(m.browseStart+offset, itemCount-1)
+		}
 	case tea.KeyRight:
-		page := m.pageSize(len(m.filteredItems))
-		m.cursor = ui.Min(m.cursor+page, len(m.filteredItems)-1)
+		itemCount := len(m.filteredItems)
+		if itemCount > 0 {
+			maxVisible := m.maxVisibleItems()
+			maxStart := ui.Max(0, itemCount-maxVisible)
+			offset := m.cursor - m.browseStart
+			if offset < 0 {
+				offset = 0
+			} else if offset >= maxVisible {
+				offset = maxVisible - 1
+			}
+			m.browseStart += maxVisible
+			if m.browseStart > maxStart {
+				m.browseStart = maxStart
+			}
+			m.cursor = ui.Min(m.browseStart+offset, itemCount-1)
+		}
 	case tea.KeyHome:
 		m.cursor = 0
+		m.browseStart = 0
 	case tea.KeyEnd:
-		m.cursor = ui.Max(0, len(m.filteredItems)-1)
+		itemCount := len(m.filteredItems)
+		if itemCount > 0 {
+			maxVisible := m.maxVisibleItems()
+			m.cursor = itemCount - 1
+			m.browseStart = ui.Max(0, itemCount-maxVisible)
+		}
 	case tea.KeySpace:
 		if m.searchQuery != "" {
 			m.searchQuery += " "
@@ -319,6 +383,7 @@ func (m Model) updateBrowse(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		m.applySearch()
 	}
+	m.ensureBrowseWindow()
 	return m, nil
 }
 
@@ -479,6 +544,41 @@ func (m Model) pageSizeWithFooter(helpLineCount int, showPosition bool) int {
 func (m Model) articleViewHeight() int {
 	spec := articleLayoutSpec(m.opts.Debug)
 	return spec.VisibleLines(m.height)
+}
+
+func (m Model) maxVisibleItems() int {
+	maxVisible := m.pageSize(len(m.filteredItems))
+	if maxVisible < 1 {
+		maxVisible = 1
+	}
+	return maxVisible
+}
+
+func (m *Model) ensureBrowseWindow() {
+	itemCount := len(m.filteredItems)
+	if itemCount == 0 {
+		m.cursor = 0
+		m.browseStart = 0
+		return
+	}
+
+	maxVisible := m.maxVisibleItems()
+	if m.cursor < 0 {
+		m.cursor = 0
+	}
+	if m.cursor >= itemCount {
+		m.cursor = itemCount - 1
+	}
+
+	maxStart := ui.Max(0, itemCount-maxVisible)
+	m.browseStart = ui.Clamp(m.browseStart, 0, maxStart)
+
+	if m.cursor < m.browseStart {
+		m.browseStart = m.cursor
+	} else if m.cursor >= m.browseStart+maxVisible {
+		m.browseStart = m.cursor - maxVisible + 1
+		m.browseStart = ui.Clamp(m.browseStart, 0, maxStart)
+	}
 }
 
 func (m Model) articlePageSize() int {
