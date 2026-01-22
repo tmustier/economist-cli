@@ -10,7 +10,7 @@
   {
     "slug": "fair-exchange",
     "title": "Fair Exchange",
-    "subtitle": "Destroyers for bases, and a new alliance",
+    "subtitle": "Destroyers-for-bases",
     "file": "fair-exchange.txt",
     "date": "1940-09-07",
     "source": "https://archive.org/details/sim_economist_1940-09-07_139_5063"
@@ -18,7 +18,7 @@
   {
     "slug": "german-europe",
     "title": "German Europe",
-    "subtitle": "Conquest and the limits of domination",
+    "subtitle": "The limits of domination",
     "file": "german-europe.txt",
     "date": "1940-09-07",
     "source": "https://archive.org/details/sim_economist_1940-09-07_139_5063"
@@ -26,7 +26,7 @@
   {
     "slug": "june-the-sixth",
     "title": "June the Sixth",
-    "subtitle": "Dunkirk’s reversal and the duty of liberation",
+    "subtitle": "Landfall at Dunkirk",
     "file": "june-the-sixth.txt",
     "date": "1944-06-10",
     "source": "https://archive.org/details/sim_economist_1944-06-10"
@@ -34,7 +34,7 @@
   {
     "slug": "atom-bomb",
     "title": "The atom bomb",
-    "subtitle": "A triumph of science and the terror of war",
+    "subtitle": "Scientific triumph, horror of war",
     "file": "atom-bomb.txt",
     "date": "1945-08-11",
     "source": "https://archive.org/details/sim_economist_1945-08-11"
@@ -42,7 +42,7 @@
   {
     "slug": "policy-for-korea",
     "title": "Policy for Korea",
-    "subtitle": "Stalemate, MacArthur, and a new UN line",
+    "subtitle": "Back at the 38th parallel",
     "file": "policy-for-korea.txt",
     "date": "1951-03-31",
     "source": "https://archive.org/details/sim_economist_1951-03-31_160_5614"
@@ -50,7 +50,7 @@
   {
     "slug": "human-use-of-human-beings",
     "title": "The Human Use of Human Beings",
-    "subtitle": "Cybernetics and society",
+    "subtitle": "Thinking machines?",
     "file": "human-use-of-human-beings.txt",
     "date": "1951-07-14",
     "source": "https://archive.org/details/sim_economist_1951-07-14"
@@ -58,7 +58,7 @@
   {
     "slug": "burnt-fingers",
     "title": "Burnt Fingers on the Public Pulse",
-    "subtitle": "Polls, Univac, and the election night surprise",
+    "subtitle": "Pollster miss, Univac swing",
     "file": "burnt-fingers-public-pulse.txt",
     "date": "1952-11-22",
     "source": "https://archive.org/details/sim_economist_1952-11-22"
@@ -146,7 +146,7 @@
   {
     "slug": "riding-on-the-sputnik",
     "title": "Riding on the Sputnik",
-    "subtitle": "Sputnik and summit talks",
+    "subtitle": "Khrushchev's summit bid",
     "file": "riding-on-the-sputnik.txt",
     "date": "1957-11-09",
     "source": "https://archive.org/details/sim_economist_1957-11-09"
