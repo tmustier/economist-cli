@@ -9,6 +9,7 @@ import (
 
 const (
 	DefaultDateWidth = 13
+	DefaultDateGap   = 2
 	MinTitleWidth    = 30
 )
 
