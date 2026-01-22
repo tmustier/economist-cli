@@ -1,5 +1,10 @@
 # Release Notes
 
+## v0.2.4
+
+- **UI foundation**: add screen host scaffolding and shared list renderer to support upcoming multi-screen views.
+- **Browse refactor**: browse list rendering now uses shared list component for consistent layout.
+
 ## v0.2.3
 
 - **Demo mode**: add `economist demo` for safe, offline screenshots with placeholder content.
