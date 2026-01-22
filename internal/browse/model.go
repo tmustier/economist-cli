@@ -412,18 +412,19 @@ func (m *Model) refreshArticleLines() {
 	}
 
 	styles := ui.NewArticleStyles(m.opts.NoColor)
+	layout := ui.ResolveArticleLayoutWithContent(m.articleBase, opts)
 	reflowStart := time.Now()
-	body := ui.ReflowArticleBody(m.articleBase, styles, opts)
+	body := ui.ReflowArticleBodyWithLayout(m.articleBase, styles, opts, layout)
 	m.reflowDuration = time.Since(reflowStart)
 	logging.Debugf(m.opts.Debug, "browse: article reflow %s", m.reflowDuration)
 
-	header := ui.RenderArticleHeader(m.article, styles, opts)
-	indent := ui.ArticleIndent(opts)
+	header := ui.RenderArticleHeaderWithLayout(m.article, styles, layout, opts)
+	indent := ui.ArticleIndentForLayout(layout)
 	if indent > 0 {
 		header = ui.IndentBlock(header, indent)
 	}
 
-	footer := ui.ArticleFooter(m.article, styles, opts)
+	footer := ui.ArticleFooterWithLayout(m.article, styles, layout, opts)
 	if indent > 0 {
 		footer = ui.IndentBlock(footer, indent)
 	}
@@ -440,10 +441,9 @@ func (m Model) articleRenderOptions() ui.ArticleRenderOptions {
 	}
 
 	wrapWidth := 0
-	center := false
+	center := true
 	if !m.twoColumn {
 		wrapWidth = ui.ReaderContentWidth(termWidth)
-		center = true
 	}
 
 	return ui.ArticleRenderOptions{

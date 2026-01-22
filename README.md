@@ -49,7 +49,7 @@ economist read "https://www.economist.com/finance-and-economics/2026/01/19/artic
 - `login` — open browser to authenticate
 - `browse [section]` — interactive TUI (defaults to Leaders)
   - `Enter` read article, `b` back, type to search
-  - `c` toggle 1-/2-columns, `Esc` clear, `q` quit
+  - `c` toggle columns on/off, `Esc` clear, `q` quit
 - `demo` — interactive TUI with demo content (no login required)
 - `headlines [section]` — list headlines
   - `-n/--number`, `-s/--search`, `--json`, `--plain`

@@ -79,11 +79,16 @@ func outputArticle(art *article.Article) error {
 		WrapWidth: wrapWidth,
 		TwoColumn: columns == 2,
 	}
-	if wrapWidth == 0 && columns == 1 && ui.IsTerminal(int(os.Stdout.Fd())) {
+	if ui.IsTerminal(int(os.Stdout.Fd())) {
 		termWidth := ui.TermWidth(int(os.Stdout.Fd()))
 		opts.TermWidth = termWidth
-		opts.WrapWidth = ui.ReaderContentWidth(termWidth)
-		opts.Center = true
+		if columns == 1 && wrapWidth == 0 {
+			opts.WrapWidth = ui.ReaderContentWidth(termWidth)
+			opts.Center = true
+		}
+		if columns == 2 {
+			opts.Center = true
+		}
 	}
 
 	out, err := ui.RenderArticle(art, opts)

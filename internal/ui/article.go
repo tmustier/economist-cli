@@ -8,8 +8,11 @@ import (
 )
 
 func RenderArticleHeader(art *article.Article, styles ArticleStyles, opts ArticleRenderOptions) string {
+	return RenderArticleHeaderWithLayout(art, styles, ResolveArticleLayout(opts), opts)
+}
+
+func RenderArticleHeaderWithLayout(art *article.Article, styles ArticleStyles, layout ArticleLayout, opts ArticleRenderOptions) string {
 	var sb strings.Builder
-	layout := ResolveArticleLayout(opts)
 	wrapWidth := layout.HeaderWrapWidth
 
 	sb.WriteString("\n")
@@ -42,8 +45,11 @@ func ArticleBodyMarkdown(art *article.Article) string {
 }
 
 func ArticleFooter(art *article.Article, styles ArticleStyles, opts ArticleRenderOptions) string {
+	return ArticleFooterWithLayout(art, styles, ResolveArticleLayout(opts), opts)
+}
+
+func ArticleFooterWithLayout(art *article.Article, styles ArticleStyles, layout ArticleLayout, opts ArticleRenderOptions) string {
 	var sb strings.Builder
-	layout := ResolveArticleLayout(opts)
 	accentStyles := NewStyles(CurrentTheme(), opts.NoColor)
 	sb.WriteString("\n\n")
 	sb.WriteString(AccentRule(layout.ContentWidth, accentStyles))

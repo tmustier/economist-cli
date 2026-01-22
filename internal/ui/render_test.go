@@ -45,12 +45,12 @@ func TestReflowArticleBodyColumns(t *testing.T) {
 		WrapWidth: 80,
 		TwoColumn: true,
 	}
-	layout := ResolveArticleLayout(opts)
+	layout := ResolveArticleLayoutWithContent(base, opts)
 	if !layout.UseColumns {
 		t.Fatalf("expected columns to be enabled")
 	}
 
-	body := ReflowArticleBody(base, styles, opts)
+	body := ReflowArticleBodyWithLayout(base, styles, opts, layout)
 	lines := strings.Split(strings.TrimRight(body, "\n"), "\n")
 	indent := strings.Repeat(" ", layout.Indent)
 	gap := strings.Repeat(" ", columnGap)
@@ -92,6 +92,26 @@ func TestResolveArticleLayoutAddsColumnsWhenWide(t *testing.T) {
 	}
 	if layout.ColumnWidth > maxColumnWidth {
 		t.Fatalf("expected column width <= %d, got %d", maxColumnWidth, layout.ColumnWidth)
+	}
+}
+
+func TestResolveArticleLayoutCapsColumnsByHeight(t *testing.T) {
+	base := strings.Repeat("line\n", 10)
+	opts := ArticleRenderOptions{
+		NoColor:   true,
+		TermWidth: 240,
+		TwoColumn: true,
+		Center:    true,
+	}
+	layout := ResolveArticleLayoutWithContent(base, opts)
+	if !layout.UseColumns {
+		t.Fatalf("expected columns to be enabled")
+	}
+	if layout.ColumnCount != 2 {
+		t.Fatalf("expected columns to cap at 2, got %d", layout.ColumnCount)
+	}
+	if layout.ContentWidth >= layout.TermWidth {
+		t.Fatalf("expected content width to be capped for centering")
 	}
 }
 

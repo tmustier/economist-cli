@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/glamour"
+	cansi "github.com/charmbracelet/x/ansi"
 	"github.com/muesli/reflow/ansi"
-	"github.com/muesli/reflow/wordwrap"
 	"github.com/muesli/termenv"
 	"github.com/tmustier/economist-tui/internal/article"
 )
@@ -16,6 +16,7 @@ const (
 	columnGap      = 4
 	minColumnWidth = 32
 	maxColumnWidth = MaxReadableWidth
+	minColumnLines = 18
 	baseWrapWidth  = 2000
 	bodyIndent     = 2
 )
@@ -49,7 +50,6 @@ func RenderArticle(art *article.Article, opts ArticleRenderOptions) (string, err
 	}
 
 	styles := NewArticleStyles(opts.NoColor)
-	header := RenderArticleHeader(art, styles, opts)
 	markdown := ArticleBodyMarkdown(art)
 
 	base, err := RenderArticleBodyBase(markdown, opts)
@@ -57,13 +57,15 @@ func RenderArticle(art *article.Article, opts ArticleRenderOptions) (string, err
 		return "", err
 	}
 
-	body := ReflowArticleBody(base, styles, opts)
-	indent := ArticleIndent(opts)
+	layout := ResolveArticleLayoutWithContent(base, opts)
+	header := RenderArticleHeaderWithLayout(art, styles, layout, opts)
+	body := ReflowArticleBodyWithLayout(base, styles, opts, layout)
+	indent := ArticleIndentForLayout(layout)
 	if indent > 0 {
 		header = IndentBlock(header, indent)
 	}
 
-	footer := ArticleFooter(art, styles, opts)
+	footer := ArticleFooterWithLayout(art, styles, layout, opts)
 	if indent > 0 {
 		footer = IndentBlock(footer, indent)
 	}
@@ -90,7 +92,10 @@ func resolveContentWidth(opts ArticleRenderOptions) int {
 }
 
 func ArticleIndent(opts ArticleRenderOptions) int {
-	layout := ResolveArticleLayout(opts)
+	return ArticleIndentForLayout(ResolveArticleLayout(opts))
+}
+
+func ArticleIndentForLayout(layout ArticleLayout) int {
 	return layout.Indent + layout.OuterPadding
 }
 
@@ -115,12 +120,24 @@ func resolveColumnLayout(contentWidth int, enabled bool) (int, int, bool) {
 
 	width := (contentWidth - columnGap*(columns-1)) / columns
 	if width < minColumnWidth {
-		return 0, 1, false
+		columns = 2
+		width = (contentWidth - columnGap) / 2
+		if width < minColumnWidth {
+			return 0, 1, false
+		}
 	}
 	return width, columns, true
 }
 
 func ResolveArticleLayout(opts ArticleRenderOptions) ArticleLayout {
+	return resolveArticleLayout(opts, "")
+}
+
+func ResolveArticleLayoutWithContent(base string, opts ArticleRenderOptions) ArticleLayout {
+	return resolveArticleLayout(opts, base)
+}
+
+func resolveArticleLayout(opts ArticleRenderOptions, base string) ArticleLayout {
 	termWidth := resolveTerminalWidth(opts)
 	contentWidth := resolveContentWidth(opts)
 	if contentWidth < 0 {
@@ -141,6 +158,36 @@ func ResolveArticleLayout(opts ArticleRenderOptions) ArticleLayout {
 	wrapWidth := availableWidth
 	if useColumns {
 		wrapWidth = columnWidth
+	}
+
+	if useColumns && base != "" && columnCount > 2 {
+		lineCount := countWrappedLines(base, wrapWidth)
+		maxByHeight := lineCount / minColumnLines
+		if maxByHeight < 2 {
+			maxByHeight = 2
+		}
+		if columnCount > maxByHeight {
+			columnCount = maxByHeight
+		}
+	}
+
+	if useColumns {
+		if opts.Center {
+			columnBlockWidth := columnBlockWidth(columnCount)
+			if columnBlockWidth > 0 && availableWidth > columnBlockWidth {
+				availableWidth = columnBlockWidth
+				contentWidth = availableWidth + indent
+			}
+		}
+		columnWidth = (availableWidth - columnGap*(columnCount-1)) / columnCount
+		if columnWidth < minColumnWidth {
+			columnWidth = 0
+			columnCount = 1
+			useColumns = false
+			wrapWidth = availableWidth
+		} else {
+			wrapWidth = columnWidth
+		}
 	}
 
 	headerWrapWidth := wrapWidth
@@ -167,6 +214,30 @@ func ResolveArticleLayout(opts ArticleRenderOptions) ArticleLayout {
 		ColumnCount:     columnCount,
 		UseColumns:      useColumns,
 	}
+}
+
+func columnBlockWidth(columnCount int) int {
+	if columnCount < 1 {
+		return 0
+	}
+	return columnCount*maxColumnWidth + columnGap*(columnCount-1)
+}
+
+func wrapBody(text string, width int) string {
+	if width <= 0 {
+		return text
+	}
+	return cansi.Wrap(text, width, "")
+}
+
+func countWrappedLines(text string, width int) int {
+	wrapped := wrapBody(text, width)
+	wrapped = normalizeParagraphSpacing(wrapped)
+	trimmed := strings.TrimRight(wrapped, "\n")
+	if trimmed == "" {
+		return 0
+	}
+	return strings.Count(trimmed, "\n") + 1
 }
 
 func writeHeaderAccent(sb *strings.Builder, layout ArticleLayout, opts ArticleRenderOptions) {
@@ -209,7 +280,11 @@ func RenderArticleBodyBase(markdown string, opts ArticleRenderOptions) (string, 
 }
 
 func ReflowArticleBody(base string, styles ArticleStyles, opts ArticleRenderOptions) string {
-	layout := ResolveArticleLayout(opts)
+	layout := ResolveArticleLayoutWithContent(base, opts)
+	return ReflowArticleBodyWithLayout(base, styles, opts, layout)
+}
+
+func ReflowArticleBodyWithLayout(base string, styles ArticleStyles, opts ArticleRenderOptions, layout ArticleLayout) string {
 	innerIndent := layout.Indent
 	outerPadding := layout.OuterPadding
 	columnWidth := layout.ColumnWidth
@@ -219,7 +294,7 @@ func ReflowArticleBody(base string, styles ArticleStyles, opts ArticleRenderOpti
 
 	body := base
 	if wrapWidth > 0 {
-		body = wordwrap.String(body, wrapWidth)
+		body = wrapBody(body, wrapWidth)
 	}
 	body = normalizeParagraphSpacing(body)
 

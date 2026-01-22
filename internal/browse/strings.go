@@ -1,7 +1,7 @@
 package browse
 
 const (
-	articleHelpFormat      = "b back • c columns (%s) • ↑/↓ scroll • pgup/pgdn • q quit"
+	articleHelpFormat      = "b back • c columns %s • ↑/↓ scroll • pgup/pgdn • q quit"
 	articleLoadingHelp     = "b back • q quit"
 	browseTitleLines       = 2
 	browseSubtitleLines    = 2
