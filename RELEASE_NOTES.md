@@ -1,5 +1,9 @@
 # Release Notes
 
+## v0.2.5
+
+- **Reader layout**: multi-column mode now caps column width and adds extra columns on wide terminals.
+
 ## v0.2.4
 
 - **UI foundation**: add screen host scaffolding and shared list renderer to support upcoming multi-screen views.
