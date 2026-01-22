@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/tmustier/economist-tui/internal/app"
 	"github.com/tmustier/economist-tui/internal/rss"
 	"github.com/tmustier/economist-tui/internal/ui"
 )
@@ -26,8 +27,15 @@ func Run(section string, opts Options) error {
 	}
 
 	ui.InitTheme()
-	m := NewModel(section, items, sectionTitle, opts, source)
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	host, err := app.NewHost(app.ScreenBrowse, map[app.ScreenID]app.ScreenBuilder{
+		app.ScreenBrowse: func() tea.Model {
+			return NewModel(section, items, sectionTitle, opts, source)
+		},
+	})
+	if err != nil {
+		return err
+	}
+	p := tea.NewProgram(host, tea.WithAltScreen())
 	_, err = p.Run()
 	return err
 }

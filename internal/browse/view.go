@@ -68,73 +68,48 @@ func (m Model) browseView() (string, string) {
 			maxVisible = 1
 		}
 
-		start := 0
-		if m.cursor >= maxVisible {
-			start = m.cursor - maxVisible + 1
-		}
-		end := start + maxVisible
-		if end > len(items) {
-			end = len(items)
-		}
+		start, end := ui.VisibleRange(m.cursor, maxVisible, len(items))
 
 		numWidth := len(fmt.Sprintf("%d", len(m.allItems)))
 		prefixWidth := len(fmt.Sprintf("%*d. ", numWidth, len(m.allItems)))
 		dateLayout := ui.ResolveDateLayout(contentWidth, prefixWidth)
-		layout := ui.NewHeadlineLayout(contentWidth, prefixWidth, dateLayout.ColumnWidth)
-		prefixPad := strings.Repeat(" ", prefixWidth)
-		subtitleWidth := layout.TitleWidth
 
-		for i := start; i < end; i++ {
-			item := items[i]
-			lineStyle := styles.Title
-			dateStyle := styles.Dim
-			subtitleStyle := styles.Subtitle
-			if i == m.cursor {
-				lineStyle = styles.Selected
-				dateStyle = styles.Selected
-			}
-
-			num := fmt.Sprintf("%*d. ", numWidth, i+1)
-			title := item.CleanTitle()
+		listItems := make([]ui.ListItem, len(items))
+		for i, item := range items {
 			date := item.FormattedDate()
 			if dateLayout.Compact {
 				date = item.CompactDate()
 			}
-			dateColumn := fmt.Sprintf("%*s", layout.DateWidth, date)
-
-			titleLines := ui.LimitLines(ui.WrapLines(title, layout.TitleWidth), browseTitleLines, layout.TitleWidth)
-			if len(titleLines) == 0 {
-				titleLines = []string{""}
+			listItems[i] = ui.ListItem{
+				Title:    item.CleanTitle(),
+				Subtitle: item.CleanDescription(),
+				Right:    date,
 			}
-			for lineIdx, line := range titleLines {
-				if lineIdx == 0 {
-					paddedTitle := fmt.Sprintf("%-*s", layout.TitleWidth, line)
-					b.WriteString(fmt.Sprintf("%s%s%s\n",
-						lineStyle.Render(num),
-						lineStyle.Render(paddedTitle),
-						dateStyle.Render(dateColumn),
-					))
-					continue
-				}
-				if line == "" {
-					b.WriteString(prefixPad + "\n")
-					continue
-				}
-				b.WriteString(fmt.Sprintf("%s%s\n", prefixPad, lineStyle.Render(line)))
-			}
-
-			desc := item.CleanDescription()
-			subtitleLines := ui.LimitLines(ui.WrapLines(desc, subtitleWidth), browseSubtitleLines, subtitleWidth)
-			for _, line := range subtitleLines {
-				if line == "" {
-					b.WriteString(prefixPad + "\n")
-					continue
-				}
-				b.WriteString(fmt.Sprintf("%s%s\n", prefixPad, subtitleStyle.Render(line)))
-			}
-
-			b.WriteString("\n")
 		}
+
+		listOpts := ui.ListOptions{
+			Width:            contentWidth,
+			PrefixWidth:      prefixWidth,
+			RightColumnWidth: dateLayout.ColumnWidth,
+			TitleLines:       browseTitleLines,
+			SubtitleLines:    browseSubtitleLines,
+			ItemGapLines:     1,
+			SelectedIndex:    m.cursor,
+			Start:            start,
+			End:              end,
+			Prefix: func(index int) string {
+				return fmt.Sprintf("%*d. ", numWidth, index+1)
+			},
+		}
+		listStyles := ui.ListStyles{
+			Title:         styles.Title,
+			Subtitle:      styles.Subtitle,
+			Selected:      styles.Selected,
+			Right:         styles.Dim,
+			RightSelected: styles.Selected,
+		}
+
+		b.WriteString(ui.RenderList(listItems, listOpts, listStyles))
 
 	}
 
