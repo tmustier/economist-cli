@@ -27,7 +27,7 @@ func TestDemoSource(t *testing.T) {
 
 	link := ""
 	for _, item := range items {
-		if strings.HasSuffix(item.Link, "/fair-exchange") {
+		if item.Title == "Fair Exchange" {
 			link = item.Link
 			break
 		}

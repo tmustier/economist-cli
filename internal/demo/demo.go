@@ -42,6 +42,7 @@ type fixtureSpec struct {
 	Subtitle string `json:"subtitle"`
 	File     string `json:"file,omitempty"`
 	Date     string `json:"date,omitempty"`
+	Source   string `json:"source"`
 }
 
 func NewSource() *Source {
@@ -99,6 +100,9 @@ func (s *Source) addLeaders() error {
 		if spec.Slug == "" || spec.Title == "" {
 			return fmt.Errorf("fixture %d missing slug or title", i)
 		}
+		if strings.TrimSpace(spec.Source) == "" {
+			return fmt.Errorf("fixture %d missing source", i)
+		}
 		published := demoBaseDate.AddDate(0, 0, -i)
 		if spec.Date != "" {
 			parsed, err := parseFixtureDate(spec.Date)
@@ -115,7 +119,10 @@ func (s *Source) addLeaders() error {
 		if content == "" {
 			content = buildContent(spec.Title)
 		}
-		url := fmt.Sprintf("https://example.com/demo/%s", spec.Slug)
+		url := strings.TrimSpace(spec.Source)
+		if !strings.Contains(url, "#") {
+			url = fmt.Sprintf("%s#%s", url, spec.Slug)
+		}
 		datedItems = append(datedItems, datedItem{
 			item: rss.Item{
 				Title:       spec.Title,
