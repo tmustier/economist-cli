@@ -7,6 +7,7 @@ Guidelines for AI agents working on this project.
 - Commit incrementally and often with descriptive messages
 - For risky changes, consider creating a branch
 - Write meaningful regression tests as you go
+- When shipping user-facing changes, bump the version (cmd/root.go or build flags) and add release notes if appropriate
 
 ## TUI
 

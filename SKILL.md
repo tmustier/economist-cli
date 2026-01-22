@@ -1,22 +1,21 @@
 ---
-name: economist-cli
-description: Read articles from The Economist via CLI. Use when user wants to browse Economist headlines, search articles by topic, or read full article content in the terminal. Requires one-time browser login for full articles.
+name: economist-tui
+description: Terminal UI + CLI to browse Economist headlines, search articles, and read full content in the terminal. Requires one-time browser login for full articles.
 ---
 
-# Economist CLI
+# Economist TUI
 
-CLI tool to browse and read The Economist articles.
+Terminal app to browse and read The Economist.
 
 ## Commands
 
 ```bash
-# Interactive browse (TUI, human-only, type to search, ←/→ page, b back, c columns)
+# Interactive browse (TUI, type to search, ←/→ page, b back, c columns)
 economist browse [section]
 
 # Run background daemon for faster reads
 economist serve
 
-# Check status or stop
 economist serve --status
 economist serve --stop
 
@@ -51,7 +50,6 @@ economist headlines finance -n 5
 economist headlines finance -s "china"
 
 # JSON output
-
 economist headlines finance --json
 
 # Read article (markdown output)
@@ -75,7 +73,7 @@ echo "https://www.economist.com/..." | economist read -
 1. Run `economist login` (opens browser)
 2. Log in to Economist account
 3. Browser closes automatically when login detected
-4. Cookies saved to `~/.config/economist-cli/`
+4. Cookies saved to `~/.config/economist-tui/`
 
 ## Agent Usage
 
@@ -98,6 +96,6 @@ Note: `browse` requires a TTY and won't work in agent context. Use `headlines --
 ## Notes
 
 - Headlines via RSS: title, one-line description, date, URL (~300 items per section, ~10 months history)
-- Full articles require login (bypasses Cloudflare via headless browser)
-- Articles cached for 1 hour under `~/.config/economist-cli/cache`
+- Full articles require login (headless browser with saved session cookies)
+- Articles cached for 1 hour under `~/.config/economist-tui/cache`
 - Articles render as markdown with glamour formatting

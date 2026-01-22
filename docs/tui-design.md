@@ -1,4 +1,4 @@
-# Economist CLI: TUI Design Document
+# Economist TUI: Design Document
 
 This document captures the design intent, research, and implementation plan for a delightful TUI reading experience, grounded in The Economist's official design system.
 
