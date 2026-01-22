@@ -15,7 +15,7 @@ func TestRenderArticleHeaderUsesFullWidthInColumns(t *testing.T) {
 		WrapWidth: 80,
 		TwoColumn: true,
 	}
-	layout := resolveArticleLayout(opts)
+	layout := ResolveArticleLayout(opts)
 	if !layout.UseColumns {
 		t.Fatalf("expected columns to be enabled")
 	}

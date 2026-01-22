@@ -195,10 +195,8 @@ func (m Model) articleView() (string, string) {
 	end := ui.Min(len(m.articleLines), start+viewHeight)
 	content := strings.Join(m.articleLines[start:end], "\n")
 
-	columnLabel := "1-col"
-	if m.twoColumn {
-		columnLabel = "2-col"
-	}
+	layout := ui.ResolveArticleLayout(opts)
+	columnLabel := fmt.Sprintf("%d-col", layout.ColumnCount)
 	help := fmt.Sprintf(articleHelpFormat, columnLabel)
 
 	showMore := end < len(m.articleLines)

@@ -15,6 +15,7 @@ import (
 const (
 	columnGap      = 4
 	minColumnWidth = 32
+	maxColumnWidth = MaxReadableWidth
 	baseWrapWidth  = 2000
 	bodyIndent     = 2
 )
@@ -38,6 +39,7 @@ type ArticleLayout struct {
 	WrapWidth       int
 	HeaderWrapWidth int
 	ColumnWidth     int
+	ColumnCount     int
 	UseColumns      bool
 }
 
@@ -88,25 +90,37 @@ func resolveContentWidth(opts ArticleRenderOptions) int {
 }
 
 func ArticleIndent(opts ArticleRenderOptions) int {
-	layout := resolveArticleLayout(opts)
+	layout := ResolveArticleLayout(opts)
 	return layout.Indent + layout.OuterPadding
 }
 
-func resolveColumnWidth(contentWidth int, enabled bool) (int, bool) {
+func resolveColumnLayout(contentWidth int, enabled bool) (int, int, bool) {
 	if !enabled {
-		return 0, false
+		return 0, 1, false
 	}
 	if contentWidth <= 0 {
-		return 0, false
+		return 0, 1, false
 	}
-	width := (contentWidth - columnGap) / 2
+	minWidth := minColumnWidth*2 + columnGap
+	if contentWidth < minWidth {
+		return 0, 1, false
+	}
+
+	numerator := contentWidth + columnGap
+	denominator := maxColumnWidth + columnGap
+	columns := (numerator + denominator - 1) / denominator
+	if columns < 2 {
+		columns = 2
+	}
+
+	width := (contentWidth - columnGap*(columns-1)) / columns
 	if width < minColumnWidth {
-		return 0, false
+		return 0, 1, false
 	}
-	return width, true
+	return width, columns, true
 }
 
-func resolveArticleLayout(opts ArticleRenderOptions) ArticleLayout {
+func ResolveArticleLayout(opts ArticleRenderOptions) ArticleLayout {
 	termWidth := resolveTerminalWidth(opts)
 	contentWidth := resolveContentWidth(opts)
 	if contentWidth < 0 {
@@ -120,7 +134,10 @@ func resolveArticleLayout(opts ArticleRenderOptions) ArticleLayout {
 		availableWidth = contentWidth - indent
 	}
 
-	columnWidth, useColumns := resolveColumnWidth(availableWidth, opts.TwoColumn)
+	columnWidth, columnCount, useColumns := resolveColumnLayout(availableWidth, opts.TwoColumn)
+	if !useColumns {
+		columnCount = 1
+	}
 	wrapWidth := availableWidth
 	if useColumns {
 		wrapWidth = columnWidth
@@ -147,6 +164,7 @@ func resolveArticleLayout(opts ArticleRenderOptions) ArticleLayout {
 		WrapWidth:       wrapWidth,
 		HeaderWrapWidth: headerWrapWidth,
 		ColumnWidth:     columnWidth,
+		ColumnCount:     columnCount,
 		UseColumns:      useColumns,
 	}
 }
@@ -191,10 +209,11 @@ func RenderArticleBodyBase(markdown string, opts ArticleRenderOptions) (string, 
 }
 
 func ReflowArticleBody(base string, styles ArticleStyles, opts ArticleRenderOptions) string {
-	layout := resolveArticleLayout(opts)
+	layout := ResolveArticleLayout(opts)
 	innerIndent := layout.Indent
 	outerPadding := layout.OuterPadding
 	columnWidth := layout.ColumnWidth
+	columnCount := layout.ColumnCount
 	useColumns := layout.UseColumns
 	wrapWidth := layout.WrapWidth
 
@@ -205,7 +224,7 @@ func ReflowArticleBody(base string, styles ArticleStyles, opts ArticleRenderOpti
 	body = normalizeParagraphSpacing(body)
 
 	if useColumns {
-		body = columnize(body, columnWidth)
+		body = columnize(body, columnWidth, columnCount)
 	}
 
 	if !opts.NoColor {
@@ -224,7 +243,10 @@ func ReflowArticleBody(base string, styles ArticleStyles, opts ArticleRenderOpti
 	return body
 }
 
-func columnize(text string, columnWidth int) string {
+func columnize(text string, columnWidth int, columnCount int) string {
+	if columnCount <= 1 {
+		return text
+	}
 	trimmed := strings.TrimRight(text, "\n")
 	lines := strings.Split(trimmed, "\n")
 	lines = trimLeadingBlankLines(lines)
@@ -233,26 +255,27 @@ func columnize(text string, columnWidth int) string {
 		return text
 	}
 
-	rows := (len(lines) + 1) / 2
+	rows := (len(lines) + columnCount - 1) / columnCount
 	gap := strings.Repeat(" ", columnGap)
 	var b strings.Builder
-	for i := 0; i < rows; i++ {
-		left := ""
-		if i < len(lines) {
-			left = lines[i]
-		}
-		left = padRightANSI(left, columnWidth)
+	for row := 0; row < rows; row++ {
+		for col := 0; col < columnCount; col++ {
+			idx := row + col*rows
+			if idx >= len(lines) {
+				break
+			}
+			line := padRightANSI(lines[idx], columnWidth)
+			b.WriteString(line)
 
-		if i+rows < len(lines) {
-			right := lines[i+rows]
-			b.WriteString(left)
-			b.WriteString(gap)
-			b.WriteString(right)
-		} else {
-			b.WriteString(left)
+			if col < columnCount-1 {
+				nextIdx := row + (col+1)*rows
+				if nextIdx < len(lines) {
+					b.WriteString(gap)
+				}
+			}
 		}
 
-		if i < rows-1 {
+		if row < rows-1 {
 			b.WriteString("\n")
 		}
 	}

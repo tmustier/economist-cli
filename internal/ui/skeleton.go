@@ -61,7 +61,7 @@ type SkeletonHeader struct {
 // RenderSkeletonHeader renders the article header skeleton.
 func RenderSkeletonHeader(h SkeletonHeader, styles SkeletonStyles, opts ArticleRenderOptions) string {
 	var sb strings.Builder
-	layout := resolveArticleLayout(opts)
+	layout := ResolveArticleLayout(opts)
 	wrapWidth := layout.HeaderWrapWidth
 
 	sb.WriteString("\n")
@@ -96,7 +96,7 @@ func RenderSkeletonHeader(h SkeletonHeader, styles SkeletonStyles, opts ArticleR
 
 // RenderSkeletonBody renders placeholder lines for the article body.
 func RenderSkeletonBody(styles SkeletonStyles, opts ArticleRenderOptions, lineCount int) string {
-	layout := resolveArticleLayout(opts)
+	layout := ResolveArticleLayout(opts)
 	wrapWidth := layout.HeaderWrapWidth
 	if wrapWidth <= 0 {
 		wrapWidth = 60

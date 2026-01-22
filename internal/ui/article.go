@@ -9,7 +9,7 @@ import (
 
 func RenderArticleHeader(art *article.Article, styles ArticleStyles, opts ArticleRenderOptions) string {
 	var sb strings.Builder
-	layout := resolveArticleLayout(opts)
+	layout := ResolveArticleLayout(opts)
 	wrapWidth := layout.HeaderWrapWidth
 
 	sb.WriteString("\n")
@@ -43,7 +43,7 @@ func ArticleBodyMarkdown(art *article.Article) string {
 
 func ArticleFooter(art *article.Article, styles ArticleStyles, opts ArticleRenderOptions) string {
 	var sb strings.Builder
-	layout := resolveArticleLayout(opts)
+	layout := ResolveArticleLayout(opts)
 	accentStyles := NewStyles(CurrentTheme(), opts.NoColor)
 	sb.WriteString("\n\n")
 	sb.WriteString(AccentRule(layout.ContentWidth, accentStyles))

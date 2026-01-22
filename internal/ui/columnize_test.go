@@ -10,7 +10,7 @@ import (
 
 func TestColumnizeTrimsBlankLines(t *testing.T) {
 	input := "\n\nFirst line\nSecond line\nThird line\n\n"
-	out := columnize(input, 20)
+	out := columnize(input, 20, 2)
 	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
 	if len(lines) == 0 {
 		t.Fatalf("expected output lines")
@@ -32,7 +32,7 @@ func TestColumnizeANSIWidth(t *testing.T) {
 		"RIGHT2",
 	}, "\n")
 
-	out := columnize(input, 6)
+	out := columnize(input, 6, 2)
 	lines := strings.Split(strings.TrimRight(out, "\n"), "\n")
 	if len(lines) == 0 {
 		t.Fatalf("expected output lines")

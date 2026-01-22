@@ -45,7 +45,10 @@ func TestReflowArticleBodyColumns(t *testing.T) {
 		WrapWidth: 80,
 		TwoColumn: true,
 	}
-	layout := resolveArticleLayout(opts)
+	layout := ResolveArticleLayout(opts)
+	if !layout.UseColumns {
+		t.Fatalf("expected columns to be enabled")
+	}
 
 	body := ReflowArticleBody(base, styles, opts)
 	lines := strings.Split(strings.TrimRight(body, "\n"), "\n")
@@ -60,14 +63,35 @@ func TestReflowArticleBodyColumns(t *testing.T) {
 			t.Fatalf("expected indent %q, got %q", indent, line)
 		}
 		trimmed := strings.TrimPrefix(line, indent)
-		if len(trimmed) > layout.ColumnWidth {
-			if len(trimmed) < layout.ColumnWidth+columnGap {
-				t.Fatalf("expected column gap, got %q", trimmed)
-			}
-			if trimmed[layout.ColumnWidth:layout.ColumnWidth+columnGap] != gap {
-				t.Fatalf("expected column gap %q, got %q", gap, trimmed)
+		for col := 1; col < layout.ColumnCount; col++ {
+			gapStart := col*layout.ColumnWidth + (col-1)*columnGap
+			if len(trimmed) > gapStart {
+				if len(trimmed) < gapStart+columnGap {
+					t.Fatalf("expected column gap, got %q", trimmed)
+				}
+				if trimmed[gapStart:gapStart+columnGap] != gap {
+					t.Fatalf("expected column gap %q, got %q", gap, trimmed)
+				}
 			}
 		}
+	}
+}
+
+func TestResolveArticleLayoutAddsColumnsWhenWide(t *testing.T) {
+	opts := ArticleRenderOptions{
+		NoColor:   true,
+		TermWidth: 220,
+		TwoColumn: true,
+	}
+	layout := ResolveArticleLayout(opts)
+	if !layout.UseColumns {
+		t.Fatalf("expected columns to be enabled")
+	}
+	if layout.ColumnCount < 3 {
+		t.Fatalf("expected at least 3 columns, got %d", layout.ColumnCount)
+	}
+	if layout.ColumnWidth > maxColumnWidth {
+		t.Fatalf("expected column width <= %d, got %d", maxColumnWidth, layout.ColumnWidth)
 	}
 }
 
