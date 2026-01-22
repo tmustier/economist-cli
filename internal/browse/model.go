@@ -472,36 +472,13 @@ func (m Model) pageSize(itemCount int) int {
 }
 
 func (m Model) pageSizeWithFooter(helpLineCount int, showPosition bool) int {
-	reserved := browseHeaderLines + browseFooterPadding + browseFooterGapLines + browseFooterLines(helpLineCount, showPosition)
-	visibleItems := m.height - reserved
-	if visibleItems < browseMinVisibleLines {
-		visibleItems = browseMinVisibleLines
-	}
-	page := visibleItems / browseItemHeight
-	if page < 1 {
-		page = 1
-	}
-	return page
-}
-
-func browseFooterLines(helpLineCount int, showPosition bool) int {
-	lines := 2 + helpLineCount
-	if showPosition {
-		lines++
-	}
-	return lines
+	spec := browseLayoutSpec(helpLineCount, showPosition)
+	return ui.PageSize(m.height, browseItemHeight, spec)
 }
 
 func (m Model) articleViewHeight() int {
-	reserved := articleReservedLines
-	if m.opts.Debug {
-		reserved++
-	}
-	visible := m.height - reserved
-	if visible < articleMinVisibleLines {
-		visible = articleMinVisibleLines
-	}
-	return visible
+	spec := articleLayoutSpec(m.opts.Debug)
+	return spec.VisibleLines(m.height)
 }
 
 func (m Model) articlePageSize() int {

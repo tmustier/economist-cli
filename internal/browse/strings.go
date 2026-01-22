@@ -13,6 +13,5 @@ const (
 	articleFooterLines     = 4
 	articleFooterPadding   = 1
 	articleFooterGapLines  = 0
-	articleReservedLines   = articleFooterLines + articleFooterPadding + articleFooterGapLines
 	articleMinVisibleLines = 5
 )

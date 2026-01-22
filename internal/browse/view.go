@@ -148,7 +148,7 @@ func (m Model) browseView() (string, string) {
 	for _, line := range helpLines {
 		footerLines = append(footerLines, styles.Help.Render(line))
 	}
-	footer := buildFooter(divider, footerLines...)
+	footer := ui.BuildFooter(divider, footerLines...)
 	if indent > 0 {
 		content = ui.IndentBlock(content, indent)
 		footer = ui.IndentBlock(footer, indent)
@@ -184,7 +184,7 @@ func (m Model) articleView() (string, string) {
 	if m.loading {
 		content := m.loadingSkeletonView()
 		footer := styles.Help.Render(articleLoadingHelp)
-		footer = buildFooter(divider, footer)
+		footer = ui.BuildFooter(divider, footer)
 		if indent > 0 {
 			footer = ui.IndentBlock(footer, indent)
 		}
@@ -195,7 +195,7 @@ func (m Model) articleView() (string, string) {
 		b.WriteString(styles.Dim.Render(fmt.Sprintf("%v", m.articleErr)))
 		content := b.String()
 		footer := styles.Help.Render(articleLoadingHelp)
-		footer = buildFooter(divider, footer)
+		footer = ui.BuildFooter(divider, footer)
 		if indent > 0 {
 			content = ui.IndentBlock(content, indent)
 			footer = ui.IndentBlock(footer, indent)
@@ -207,7 +207,7 @@ func (m Model) articleView() (string, string) {
 		b.WriteString("No article loaded.")
 		content := b.String()
 		footer := styles.Help.Render(articleLoadingHelp)
-		footer = buildFooter(divider, footer)
+		footer = ui.BuildFooter(divider, footer)
 		if indent > 0 {
 			content = ui.IndentBlock(content, indent)
 			footer = ui.IndentBlock(footer, indent)
@@ -247,7 +247,7 @@ func (m Model) articleView() (string, string) {
 		divider = ""
 	}
 
-	footer := buildFooter(divider, hintLine, styles.Help.Render(help))
+	footer := ui.BuildFooter(divider, hintLine, styles.Help.Render(help))
 	if m.opts.Debug {
 		detail := fmt.Sprintf("fetch=%s base=%s reflow=%s", m.fetchDuration, m.baseDuration, m.reflowDuration)
 		footer = strings.TrimRight(footer, "\n") + "\n" + styles.Dim.Render(detail)
@@ -272,17 +272,6 @@ func (m Model) loadingSkeletonView() string {
 	}
 
 	return ui.RenderArticleSkeleton(header, m.articleRenderOptions(), m.articleViewHeight())
-}
-
-func buildFooter(divider string, lines ...string) string {
-	footerLines := []string{"", divider}
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-		footerLines = append(footerLines, line)
-	}
-	return strings.Join(footerLines, "\n")
 }
 
 func lastNonBlankLine(lines []string) string {
