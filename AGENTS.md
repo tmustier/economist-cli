@@ -10,6 +10,22 @@ Guidelines for AI agents working on this project.
 - When shipping user-facing changes, bump the version (cmd/root.go or build flags) and add release notes if appropriate
 - When incrementing the version, update the Homebrew tap formula in `tmustier/homebrew-tap`
 
+## Codebase Orientation
+
+- `cmd/`: CLI entry points and command wiring
+- `internal/browse`: main TUI screens (browse + article reader)
+- `internal/ui`: styling, layout, rendering, and shared UI helpers (LayoutSpec, BuildFooter, SelectHintLine)
+- `internal/article`: article parsing and formatting
+- `internal/rss`: section/feed metadata and parsing
+- `internal/fetch` / `internal/browser`: network fetch + headless browser scraping
+- `internal/cache`, `internal/config`, `internal/search`, `internal/logging`: supporting subsystems
+
+## UI Layout Conventions
+
+- Use `ui.LayoutSpec`/`ui.PageSize` for view height and list sizing instead of hard-coded reserved lines.
+- Use `ui.BuildFooter` for footer construction and `ui.SelectHintLine` for responsive help text.
+- Each screen should define a `layout.go` with its layout spec helpers (ex: `browseLayoutSpec`).
+
 ## TUI
 
 Ensure:
