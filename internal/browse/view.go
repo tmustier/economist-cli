@@ -151,7 +151,7 @@ func (m Model) articleView() string {
 				pct = 99
 			}
 		}
-		hint := fmt.Sprintf("↓ more · %d%%", pct)
+		hint := fmt.Sprintf("%d%% · more ↓", pct)
 		hintLine := styles.Dim.Render(hint)
 		if indent > 0 {
 			b.WriteString(ui.IndentBlock(hintLine, indent))
