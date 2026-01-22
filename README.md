@@ -32,6 +32,9 @@ make install
 # Login (one-time, for full articles)
 economist login
 
+# Demo mode (no login required)
+economist demo
+
 # Interactive Terminal UI
 economist browse
 economist browse finance
@@ -47,6 +50,7 @@ economist read "https://www.economist.com/finance-and-economics/2026/01/19/artic
 - `browse [section]` — interactive TUI (defaults to Leaders)
   - `Enter` read article, `b` back, type to search
   - `c` toggle 1-/2-columns, `Esc` clear, `q` quit
+- `demo` — interactive TUI with demo content (no login required)
 - `headlines [section]` — list headlines
   - `-n/--number`, `-s/--search`, `--json`, `--plain`
 - `read [url|-]` — read full article (`--raw`, `--wrap`, `--columns`)

@@ -11,33 +11,38 @@ import (
 type Options struct {
 	Debug   bool
 	NoColor bool
+	Source  DataSource
 }
 
 func Run(section string, opts Options) error {
-	sectionTitle, items, err := loadSection(section)
+	source := opts.Source
+	if source == nil {
+		source = rssSource{debug: opts.Debug}
+	}
+
+	sectionTitle, items, err := loadSection(source, section)
 	if err != nil {
 		return err
 	}
 
 	ui.InitTheme()
-	m := NewModel(section, items, sectionTitle, opts)
+	m := NewModel(section, items, sectionTitle, opts, source)
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	_, err = p.Run()
 	return err
 }
 
-func loadSection(section string) (string, []rss.Item, error) {
-	feed, err := rss.FetchSection(section)
+func loadSection(source DataSource, section string) (string, []rss.Item, error) {
+	sectionTitle, items, err := source.Section(section)
 	if err != nil {
 		return "", nil, err
 	}
 
-	items := feed.Channel.Items
 	if len(items) > 50 {
 		items = items[:50]
 	}
 
-	sectionTitle := strings.TrimSpace(feed.Channel.Title)
+	sectionTitle = strings.TrimSpace(sectionTitle)
 	if sectionTitle == "" {
 		sectionTitle = section
 	}

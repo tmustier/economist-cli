@@ -10,7 +10,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/tmustier/economist-tui/internal/article"
-	"github.com/tmustier/economist-tui/internal/fetch"
 	"github.com/tmustier/economist-tui/internal/logging"
 	"github.com/tmustier/economist-tui/internal/rss"
 	"github.com/tmustier/economist-tui/internal/search"
@@ -70,10 +69,14 @@ type Model struct {
 	baseDuration   time.Duration
 	reflowDuration time.Duration
 
-	opts Options
+	source DataSource
+	opts   Options
 }
 
-func NewModel(section string, items []rss.Item, sectionTitle string, opts Options) Model {
+func NewModel(section string, items []rss.Item, sectionTitle string, opts Options, source DataSource) Model {
+	if source == nil {
+		source = rssSource{debug: opts.Debug}
+	}
 	w, h := ui.TermSize(int(os.Stdout.Fd()))
 	sections := rss.SectionList()
 	sectionIndex, sections := resolveSectionIndex(section, sections)
@@ -86,6 +89,7 @@ func NewModel(section string, items []rss.Item, sectionTitle string, opts Option
 		width:               w,
 		height:              h,
 		mode:                modeBrowse,
+		source:              source,
 		opts:                opts,
 		pendingSectionIndex: -1,
 	}
@@ -161,17 +165,25 @@ func isDigits(input string) bool {
 	return input != ""
 }
 
-func fetchArticleCmd(url string, debug bool) tea.Cmd {
+func (m Model) fetchArticleCmd(url string) tea.Cmd {
+	source := m.source
+	if source == nil {
+		source = rssSource{debug: m.opts.Debug}
+	}
 	return func() tea.Msg {
 		start := time.Now()
-		art, err := fetch.FetchArticle(url, fetch.Options{Debug: debug})
+		art, err := source.Article(url)
 		return articleMsg{url: url, article: art, err: err, fetchDuration: time.Since(start)}
 	}
 }
 
-func fetchSectionCmd(section string) tea.Cmd {
+func (m Model) fetchSectionCmd(section string) tea.Cmd {
+	source := m.source
+	if source == nil {
+		source = rssSource{debug: m.opts.Debug}
+	}
 	return func() tea.Msg {
-		title, items, err := loadSection(section)
+		title, items, err := loadSection(source, section)
 		return sectionMsg{section: section, title: title, items: items, err: err}
 	}
 }
@@ -274,7 +286,7 @@ func (m Model) updateBrowse(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.articleBase = ""
 			m.articleLines = nil
 			m.scroll = 0
-			return m, fetchArticleCmd(item.Link, m.opts.Debug)
+			return m, m.fetchArticleCmd(item.Link)
 		}
 	case tea.KeyUp:
 		if m.cursor > 0 {
@@ -376,7 +388,7 @@ func (m Model) queueSectionChange(delta int) (tea.Model, tea.Cmd) {
 	m.pendingSectionIndex = nextIndex
 	m.sectionLoading = true
 	m.sectionErr = nil
-	return m, fetchSectionCmd(nextSection)
+	return m, m.fetchSectionCmd(nextSection)
 }
 
 func (m *Model) refreshArticleLines() {

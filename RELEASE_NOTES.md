@@ -1,5 +1,9 @@
 # Release Notes
 
+## v0.2.3
+
+- **Demo mode**: add `economist demo` for safe, offline screenshots with placeholder content.
+
 ## v0.2.2
 
 - **Layout**: apply symmetric padding in browse and article views for centered columns.
