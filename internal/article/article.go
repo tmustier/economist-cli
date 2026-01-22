@@ -153,8 +153,14 @@ func parseArticle(html, articleURL string) (*Article, error) {
 		".article__section-headline",
 		".article__headline-overline",
 	)
+	if article.Overtitle == "" {
+		article.Overtitle = extractHeaderOvertitle(doc)
+	}
 	article.Title = findFirst(doc, "h1.article__headline", "[data-test-id='headline']", "article h1", "h1")
-	article.Subtitle = findFirst(doc, ".article__description", "[data-test-id='subheadline']", ".article__subheadline", "h2.article__description")
+	article.Subtitle = findFirst(doc, ".article__description", "[data-test-id='subheadline']", ".article__subheadline", "h2.article__description", "header h2", "section h2")
+	if article.Subtitle == "" {
+		article.Subtitle = extractFirstHeading(doc, "h2")
+	}
 	article.DateLine = strings.TrimSpace(doc.Find("time").First().Text())
 	article.Content = extractContent(doc)
 
@@ -167,11 +173,63 @@ func parseArticle(html, articleURL string) (*Article, error) {
 
 func findFirst(doc *goquery.Document, selectors ...string) string {
 	for _, sel := range selectors {
-		if text := strings.TrimSpace(doc.Find(sel).First().Text()); text != "" {
+		if text := cleanHeaderText(doc.Find(sel).First().Text()); text != "" {
 			return text
 		}
 	}
 	return ""
+}
+
+func extractFirstHeading(doc *goquery.Document, selector string) string {
+	return cleanHeaderText(doc.Find(selector).First().Text())
+}
+
+func extractHeaderOvertitle(doc *goquery.Document) string {
+	headline := doc.Find("h1").First()
+	if headline.Length() == 0 {
+		return ""
+	}
+
+	for prev := headline.Prev(); prev.Length() > 0; prev = prev.Prev() {
+		node := goquery.NodeName(prev)
+		if node == "style" || node == "script" {
+			continue
+		}
+		text := cleanSelectionText(prev)
+		if text != "" {
+			return text
+		}
+	}
+
+	parent := headline.Parent()
+	if parent.Length() == 0 {
+		return ""
+	}
+
+	text := cleanSelectionText(parent.Find("a, span").First())
+	if text != "" {
+		return text
+	}
+
+	return ""
+}
+
+func cleanSelectionText(sel *goquery.Selection) string {
+	if sel.Length() == 0 {
+		return ""
+	}
+	clone := sel.Clone()
+	clone.Find("style,script").Remove()
+	return cleanHeaderText(clone.Text())
+}
+
+func cleanHeaderText(text string) string {
+	text = strings.ReplaceAll(text, "\u00a0", " ")
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return ""
+	}
+	return strings.Join(strings.Fields(text), " ")
 }
 
 func extractContent(doc *goquery.Document) string {
