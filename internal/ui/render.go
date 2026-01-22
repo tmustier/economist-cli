@@ -46,7 +46,7 @@ func RenderArticle(art *article.Article, opts ArticleRenderOptions) (string, err
 	}
 
 	styles := NewArticleStyles(opts.NoColor)
-	header := RenderArticleHeader(art, styles)
+	header := RenderArticleHeader(art, styles, opts)
 	markdown := ArticleBodyMarkdown(art)
 
 	base, err := RenderArticleBodyBase(markdown, opts)

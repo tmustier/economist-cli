@@ -40,6 +40,7 @@ type Styles struct {
 
 type ArticleStyles struct {
 	Overtitle lipgloss.Style
+	Section   lipgloss.Style
 	Title     lipgloss.Style
 	Subtitle  lipgloss.Style
 	Date      lipgloss.Style
@@ -131,6 +132,7 @@ func NewBrowseStyles(noColor bool) BrowseStyles {
 func NewArticleStyles(noColor bool) ArticleStyles {
 	theme := CurrentTheme()
 	overtitle := lipgloss.NewStyle().Foreground(theme.TextMuted).Faint(true)
+	section := lipgloss.NewStyle().Foreground(theme.Brand)
 	title := lipgloss.NewStyle().Bold(true).Foreground(theme.Brand)
 	subtitle := lipgloss.NewStyle().Foreground(theme.TextMuted).Faint(true)
 	date := lipgloss.NewStyle().Foreground(theme.TextFaint).Faint(true)
@@ -139,6 +141,7 @@ func NewArticleStyles(noColor bool) ArticleStyles {
 
 	if noColor {
 		overtitle = lipgloss.NewStyle()
+		section = lipgloss.NewStyle()
 		title = lipgloss.NewStyle().Bold(true)
 		subtitle = lipgloss.NewStyle()
 		date = lipgloss.NewStyle()
@@ -148,6 +151,7 @@ func NewArticleStyles(noColor bool) ArticleStyles {
 
 	return ArticleStyles{
 		Overtitle: overtitle,
+		Section:   section,
 		Title:     title,
 		Subtitle:  subtitle,
 		Date:      date,

@@ -293,7 +293,7 @@ func (m *Model) refreshArticleLines() {
 	m.reflowDuration = time.Since(reflowStart)
 	logging.Debugf(m.opts.Debug, "browse: article reflow %s", m.reflowDuration)
 
-	header := ui.RenderArticleHeader(m.article, styles)
+	header := ui.RenderArticleHeader(m.article, styles, opts)
 	indent := ui.ArticleIndent(opts)
 	if indent > 0 {
 		header = ui.IndentBlock(header, indent)
