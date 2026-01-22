@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/ansi"
 )
 
 const (
@@ -30,4 +31,39 @@ func SectionRule(width int, styles Styles) string {
 
 func SectionBadge(section string, styles Styles) string {
 	return styles.Overline.Render(strings.ToUpper(section))
+}
+
+func IsRuleLine(line string) bool {
+	stripped := strings.TrimSpace(StripANSI(line))
+	if stripped == "" {
+		return false
+	}
+	for _, r := range stripped {
+		switch string(r) {
+		case RuleLight, RuleHeavy, RuleDouble, RuleDotted:
+			continue
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+func StripANSI(text string) string {
+	var b strings.Builder
+	inSeq := false
+	for _, r := range text {
+		if inSeq {
+			if ansi.IsTerminator(r) {
+				inSeq = false
+			}
+			continue
+		}
+		if r == ansi.Marker {
+			inSeq = true
+			continue
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
 }

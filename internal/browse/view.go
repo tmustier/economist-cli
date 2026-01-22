@@ -10,14 +10,14 @@ import (
 
 func (m Model) View() string {
 	if m.mode == modeArticle {
-		content, footer := m.articleView()
-		return ui.LayoutWithFooter(content, footer, m.height, browseFooterPadding)
+		content, divider, footer := m.articleView()
+		return ui.LayoutWithFooterDivider(content, divider, footer, m.height, browseFooterPadding)
 	}
-	content, footer := m.browseView()
-	return ui.LayoutWithFooter(content, footer, m.height, browseFooterPadding)
+	content, divider, footer := m.browseView()
+	return ui.LayoutWithFooterDivider(content, divider, footer, m.height, browseFooterPadding)
 }
 
-func (m Model) browseView() (string, string) {
+func (m Model) browseView() (string, string, string) {
 	styles := ui.NewBrowseStyles(m.opts.NoColor)
 	accentStyles := ui.NewStyles(ui.CurrentTheme(), m.opts.NoColor)
 
@@ -128,21 +128,33 @@ func (m Model) browseView() (string, string) {
 	content := b.String()
 	footerLines := []string{}
 	if len(items) > maxVisible {
-		footerLines = append(footerLines, styles.Dim.Render(fmt.Sprintf("  (%d/%d)", m.cursor+1, len(items))))
+		footerLines = append(footerLines, styles.Dim.Render(fmt.Sprintf("(%d/%d)", m.cursor+1, len(items))))
 	}
 	footerLines = append(footerLines, styles.Help.Render(browseHelpText))
 	footer := strings.Join(footerLines, "\n")
+	divider := ui.SectionRule(contentWidth, accentStyles)
 	if indent > 0 {
 		content = ui.IndentBlock(content, indent)
 		footer = ui.IndentBlock(footer, indent)
+		divider = ui.IndentBlock(divider, indent)
 	}
 
-	return content, footer
+	return content, divider, footer
 }
 
-func (m Model) articleView() (string, string) {
+func (m Model) articleView() (string, string, string) {
 	styles := ui.NewBrowseStyles(m.opts.NoColor)
-	indent := ui.ArticleIndent(m.articleRenderOptions())
+	opts := m.articleRenderOptions()
+	indent := ui.ArticleIndent(opts)
+	contentWidth := opts.WrapWidth
+	if contentWidth <= 0 {
+		contentWidth = opts.TermWidth
+		if contentWidth <= 0 {
+			contentWidth = ui.DefaultWidth
+		}
+	}
+	ruleStyles := ui.NewStyles(ui.CurrentTheme(), m.opts.NoColor)
+	divider := ui.SectionRule(contentWidth, ruleStyles)
 
 	var b strings.Builder
 	if m.loading {
@@ -150,8 +162,9 @@ func (m Model) articleView() (string, string) {
 		footer := styles.Help.Render(articleLoadingHelp)
 		if indent > 0 {
 			footer = ui.IndentBlock(footer, indent)
+			divider = ui.IndentBlock(divider, indent)
 		}
-		return content, footer
+		return content, divider, footer
 	}
 
 	if m.articleErr != nil {
@@ -161,8 +174,9 @@ func (m Model) articleView() (string, string) {
 		if indent > 0 {
 			content = ui.IndentBlock(content, indent)
 			footer = ui.IndentBlock(footer, indent)
+			divider = ui.IndentBlock(divider, indent)
 		}
-		return content, footer
+		return content, divider, footer
 	}
 
 	if len(m.articleLines) == 0 {
@@ -172,8 +186,9 @@ func (m Model) articleView() (string, string) {
 		if indent > 0 {
 			content = ui.IndentBlock(content, indent)
 			footer = ui.IndentBlock(footer, indent)
+			divider = ui.IndentBlock(divider, indent)
 		}
-		return content, footer
+		return content, divider, footer
 	}
 
 	start := ui.Min(m.scroll, m.maxArticleScroll())
@@ -210,12 +225,18 @@ func (m Model) articleView() (string, string) {
 		footerLines = append(footerLines, styles.Dim.Render(detail))
 	}
 
+	lastLine := lastNonBlankLine(m.articleLines[start:end])
+	if ui.IsRuleLine(lastLine) {
+		divider = ""
+	}
+
 	footer := strings.Join(footerLines, "\n")
 	if indent > 0 {
 		footer = ui.IndentBlock(footer, indent)
+		divider = ui.IndentBlock(divider, indent)
 	}
 
-	return content, footer
+	return content, divider, footer
 }
 
 func (m Model) loadingSkeletonView() string {
@@ -230,4 +251,14 @@ func (m Model) loadingSkeletonView() string {
 	}
 
 	return ui.RenderArticleSkeleton(header, m.articleRenderOptions(), m.articleViewHeight())
+}
+
+func lastNonBlankLine(lines []string) string {
+	for i := len(lines) - 1; i >= 0; i-- {
+		if strings.TrimSpace(ui.StripANSI(lines[i])) == "" {
+			continue
+		}
+		return lines[i]
+	}
+	return ""
 }

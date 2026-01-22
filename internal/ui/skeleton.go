@@ -35,16 +35,14 @@ func NewSkeletonStyles(noColor bool) SkeletonStyles {
 	articleStyles := NewArticleStyles(noColor)
 	theme := CurrentTheme()
 
-	solid := lipgloss.NewStyle().Foreground(theme.TextFaint)
 	light := lipgloss.NewStyle().Foreground(theme.Border)
 	if noColor {
-		solid = lipgloss.NewStyle()
 		light = lipgloss.NewStyle()
 	}
 
 	return SkeletonStyles{
 		Section:  articleStyles.Section,
-		Solid:    solid,
+		Solid:    light,
 		Light:    light,
 		Title:    articleStyles.Title,
 		Subtitle: articleStyles.Subtitle,
