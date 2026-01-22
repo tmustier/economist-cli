@@ -1,5 +1,9 @@
 # Release Notes
 
+## v0.3.2
+
+- **Demo mode**: update demo header to describe archive content.
+
 ## v0.3.1
 
 - **Browse navigation**: keep list stable when moving within the visible window; page left/right preserves selection position.

@@ -21,7 +21,7 @@ const fixturesIndexPath = "fixtures/index.json"
 
 const DefaultSection = "leaders"
 
-const demoSectionTitle = "Leaders - demo"
+const demoSectionTitle = "Demo Content: Selected from Archive.org"
 
 var demoBaseDate = time.Date(2026, time.January, 22, 9, 0, 0, 0, time.UTC)
 
