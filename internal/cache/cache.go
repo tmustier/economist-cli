@@ -95,6 +95,10 @@ func PurgeExpired() error {
 	return nil
 }
 
+func CacheDir() string {
+	return cacheDir()
+}
+
 func cacheDir() string {
 	return filepath.Join(config.ConfigDir(), cacheDirName)
 }

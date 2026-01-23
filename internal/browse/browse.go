@@ -26,6 +26,10 @@ func Run(section string, opts Options) error {
 		return err
 	}
 
+	if _, ok := source.(rssSource); ok {
+		go rss.PrefetchAll()
+	}
+
 	ui.InitTheme()
 	host, err := app.NewHost(app.ScreenBrowse, map[app.ScreenID]app.ScreenBuilder{
 		app.ScreenBrowse: func() tea.Model {

@@ -1,5 +1,10 @@
 # Release Notes
 
+## v0.3.8
+
+- **Browse navigation**: left/right now wrap to previous/next section when paging hits the ends.
+- **RSS caching**: warm all section feeds at launch and keep cached results for 120s, with offline fallback.
+
 ## v0.3.7
 
 - **Demo mode**: refine cybernetics, polling, and mid-century subtitles.

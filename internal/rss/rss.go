@@ -116,33 +116,57 @@ func FetchSection(section string) (*RSS, error) {
 	sectionPath := resolveSection(section)
 	url := fmt.Sprintf("https://www.economist.com/%s/rss.xml", sectionPath)
 
+	cachedBody, cachedAt, cachedOK, _ := loadCachedSection(sectionPath)
+	if cachedOK && time.Since(cachedAt) <= rssCacheTTL {
+		if rss, err := parseRSS(cachedBody); err == nil {
+			return rss, nil
+		}
+	}
+
+	returnCached := func(err error) (*RSS, error) {
+		if cachedOK {
+			return parseRSS(cachedBody)
+		}
+		return nil, err
+	}
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, err
+		return returnCached(err)
 	}
 	req.Header.Set("User-Agent", browser.UserAgent)
 
 	client := &http.Client{Timeout: httpTimeout}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return returnCached(err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("HTTP %d from %s", resp.StatusCode, url)
+		err := fmt.Errorf("HTTP %d from %s", resp.StatusCode, url)
+		return returnCached(err)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return returnCached(err)
 	}
 
+	rss, err := parseRSS(body)
+	if err != nil {
+		return returnCached(err)
+	}
+	_ = saveCachedSection(sectionPath, body)
+
+	return rss, nil
+}
+
+func parseRSS(body []byte) (*RSS, error) {
 	var rss RSS
 	if err := xml.Unmarshal(body, &rss); err != nil {
 		return nil, err
 	}
-
 	return &rss, nil
 }
 

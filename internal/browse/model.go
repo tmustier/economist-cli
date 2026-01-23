@@ -327,40 +327,9 @@ func (m Model) updateBrowse(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case tea.KeyLeft:
-		itemCount := len(m.filteredItems)
-		if itemCount > 0 {
-			layout := m.browseLayout(len(m.filteredItems))
-			maxVisible := layout.maxVisible
-			offset := m.cursor - m.browseStart
-			if offset < 0 {
-				offset = 0
-			} else if offset >= maxVisible {
-				offset = maxVisible - 1
-			}
-			m.browseStart -= maxVisible
-			if m.browseStart < 0 {
-				m.browseStart = 0
-			}
-			m.cursor = ui.Min(m.browseStart+offset, itemCount-1)
-		}
+		return m.pageBrowse(-1)
 	case tea.KeyRight:
-		itemCount := len(m.filteredItems)
-		if itemCount > 0 {
-			layout := m.browseLayout(len(m.filteredItems))
-			maxVisible := layout.maxVisible
-			maxStart := ui.Max(0, itemCount-maxVisible)
-			offset := m.cursor - m.browseStart
-			if offset < 0 {
-				offset = 0
-			} else if offset >= maxVisible {
-				offset = maxVisible - 1
-			}
-			m.browseStart += maxVisible
-			if m.browseStart > maxStart {
-				m.browseStart = maxStart
-			}
-			m.cursor = ui.Min(m.browseStart+offset, itemCount-1)
-		}
+		return m.pageBrowse(1)
 	case tea.KeyHome:
 		m.cursor = 0
 		m.browseStart = 0
@@ -386,6 +355,42 @@ func (m Model) updateBrowse(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.applySearch()
 	}
 	m.ensureBrowseWindow()
+	return m, nil
+}
+
+func (m Model) pageBrowse(delta int) (tea.Model, tea.Cmd) {
+	itemCount := len(m.filteredItems)
+	if itemCount == 0 {
+		return m.queueSectionChange(delta)
+	}
+
+	layout := m.browseLayout(itemCount)
+	maxVisible := layout.maxVisible
+	maxStart := ui.Max(0, itemCount-maxVisible)
+
+	if delta < 0 {
+		if m.browseStart == 0 {
+			return m.queueSectionChange(-1)
+		}
+	} else if m.browseStart >= maxStart {
+		return m.queueSectionChange(1)
+	}
+
+	offset := m.cursor - m.browseStart
+	if offset < 0 {
+		offset = 0
+	} else if offset >= maxVisible {
+		offset = maxVisible - 1
+	}
+
+	m.browseStart += delta * maxVisible
+	if m.browseStart < 0 {
+		m.browseStart = 0
+	} else if m.browseStart > maxStart {
+		m.browseStart = maxStart
+	}
+
+	m.cursor = ui.Min(m.browseStart+offset, itemCount-1)
 	return m, nil
 }
 
