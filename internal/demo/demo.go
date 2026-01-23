@@ -21,7 +21,23 @@ const fixturesIndexPath = "fixtures/index.json"
 
 const DefaultSection = "leaders"
 
-const demoSectionTitle = "Leaders (Demo)"
+var demoSectionTitles = map[string]string{
+	"leaders":                "Leaders",
+	"briefing":               "Briefing",
+	"finance-and-economics":  "Finance & Economics",
+	"united-states":          "United States",
+	"britain":                "Britain",
+	"europe":                 "Europe",
+	"middle-east-and-africa": "Middle East & Africa",
+	"asia":                   "Asia",
+	"china":                  "China",
+	"the-americas":           "The Americas",
+	"business":               "Business",
+	"science-and-technology": "Science & Technology",
+	"culture":                "Culture",
+	"graphic-detail":         "Graphic Detail",
+	"the-world-this-week":    "The World This Week",
+}
 
 var demoBaseDate = time.Date(2026, time.January, 22, 9, 0, 0, 0, time.UTC)
 
@@ -40,6 +56,7 @@ type fixtureSpec struct {
 	Slug     string `json:"slug"`
 	Title    string `json:"title"`
 	Subtitle string `json:"subtitle"`
+	Section  string `json:"section"`
 	File     string `json:"file,omitempty"`
 	Date     string `json:"date,omitempty"`
 	Source   string `json:"source"`
@@ -50,7 +67,7 @@ func NewSource() *Source {
 		sections: make(map[string]sectionData),
 		articles: make(map[string]*article.Article),
 	}
-	if err := source.addLeaders(); err != nil {
+	if err := source.addFixtures(); err != nil {
 		source.loadErr = err
 	}
 	return source
@@ -60,10 +77,7 @@ func (s *Source) Section(section string) (string, []rss.Item, error) {
 	if s.loadErr != nil {
 		return "", nil, s.loadErr
 	}
-	if section == "" {
-		section = DefaultSection
-	}
-	key := strings.ToLower(section)
+	key := resolveDemoSection(section)
 	if data, ok := s.sections[key]; ok {
 		return data.title, data.items, nil
 	}
@@ -84,7 +98,7 @@ func (s *Source) Article(url string) (*article.Article, error) {
 	return nil, fmt.Errorf("demo article not found")
 }
 
-func (s *Source) addLeaders() error {
+func (s *Source) addFixtures() error {
 	specs, err := loadFixtureSpecs()
 	if err != nil {
 		return err
@@ -95,13 +109,20 @@ func (s *Source) addLeaders() error {
 		published time.Time
 	}
 
-	datedItems := make([]datedItem, 0, len(specs))
+	sectionItems := make(map[string][]datedItem)
 	for i, spec := range specs {
 		if spec.Slug == "" || spec.Title == "" {
 			return fmt.Errorf("fixture %d missing slug or title", i)
 		}
 		if strings.TrimSpace(spec.Source) == "" {
 			return fmt.Errorf("fixture %d missing source", i)
+		}
+		if strings.TrimSpace(spec.Section) == "" {
+			return fmt.Errorf("fixture %d missing section", i)
+		}
+		sectionKey := resolveDemoSection(spec.Section)
+		if sectionKey == "" {
+			return fmt.Errorf("fixture %d has invalid section %q", i, spec.Section)
 		}
 		published := demoBaseDate.AddDate(0, 0, -i)
 		if spec.Date != "" {
@@ -123,18 +144,19 @@ func (s *Source) addLeaders() error {
 		if !strings.Contains(url, "#") {
 			url = fmt.Sprintf("%s#%s", url, spec.Slug)
 		}
-		datedItems = append(datedItems, datedItem{
-			item: rss.Item{
-				Title:       spec.Title,
-				Description: spec.Subtitle,
-				Link:        url,
-				GUID:        url,
-				PubDate:     published.Format(time.RFC1123Z),
-			},
+		item := rss.Item{
+			Title:       spec.Title,
+			Description: spec.Subtitle,
+			Link:        url,
+			GUID:        url,
+			PubDate:     published.Format(time.RFC1123Z),
+		}
+		sectionItems[sectionKey] = append(sectionItems[sectionKey], datedItem{
+			item:      item,
 			published: published,
 		})
 		s.articles[url] = &article.Article{
-			Overtitle: "Leaders | Demo",
+			Overtitle: fmt.Sprintf("%s | Demo", demoSectionLabel(sectionKey)),
 			Title:     spec.Title,
 			Subtitle:  spec.Subtitle,
 			DateLine:  formatDateLine(published),
@@ -143,16 +165,27 @@ func (s *Source) addLeaders() error {
 		}
 	}
 
-	sort.SliceStable(datedItems, func(i, j int) bool {
-		return datedItems[i].published.After(datedItems[j].published)
-	})
-
-	items := make([]rss.Item, 0, len(datedItems))
-	for _, entry := range datedItems {
-		items = append(items, entry.item)
+	if len(sectionItems) == 0 {
+		return fmt.Errorf("fixtures index is empty")
 	}
 
-	s.sections[DefaultSection] = sectionData{title: demoSectionTitle, items: items}
+	for sectionKey, datedItems := range sectionItems {
+		sort.SliceStable(datedItems, func(i, j int) bool {
+			return datedItems[i].published.After(datedItems[j].published)
+		})
+
+		items := make([]rss.Item, 0, len(datedItems))
+		for _, entry := range datedItems {
+			items = append(items, entry.item)
+		}
+
+		s.sections[sectionKey] = sectionData{title: demoSectionTitle(sectionKey), items: items}
+	}
+
+	if _, ok := s.sections[DefaultSection]; !ok {
+		return fmt.Errorf("fixtures missing default section %q", DefaultSection)
+	}
+
 	return nil
 }
 
@@ -184,6 +217,36 @@ func formatDateLine(t time.Time) string {
 		}
 	}
 	return fmt.Sprintf("%s %d%s %d", t.Format("Jan"), day, suffix, t.Year())
+}
+
+func demoSectionLabel(section string) string {
+	if title, ok := demoSectionTitles[section]; ok {
+		return title
+	}
+	trimmed := strings.TrimSpace(section)
+	if trimmed == "" {
+		if fallback, ok := demoSectionTitles[DefaultSection]; ok {
+			return fallback
+		}
+		return DefaultSection
+	}
+	return strings.ReplaceAll(trimmed, "-", " ")
+}
+
+func demoSectionTitle(section string) string {
+	return fmt.Sprintf("%s (Demo)", demoSectionLabel(section))
+}
+
+func resolveDemoSection(section string) string {
+	trimmed := strings.TrimSpace(section)
+	if trimmed == "" {
+		return DefaultSection
+	}
+	normalized := strings.ToLower(trimmed)
+	if resolved, ok := rss.Sections[normalized]; ok {
+		return resolved
+	}
+	return normalized
 }
 
 func loadFixtureSpecs() ([]fixtureSpec, error) {

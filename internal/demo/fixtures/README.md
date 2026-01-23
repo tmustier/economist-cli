@@ -26,12 +26,12 @@ Additional fixtures include leader excerpts provided for demo mode:
 - `riding-on-the-sputnik.txt` — **The Economist, Nov 9th 1957**
 - `young-mans-america.txt` — **The Economist, Nov 12th 1960**
 
-Fixture metadata (titles, subtitles, dates, ordering, sources) lives in `index.json`. Dates accept `YYYY-MM-DD` or human-readable formats like `Nov 12th 1960`. Subtitles are invented for illustration; think about what the article is saying and write a concise Economist-style subtitle rather than an obvious restatement. When a title is vague, it’s fine to be plainer (e.g., “Asian Milestone” is subtitled “Malaya’s independence” because that’s what it covers, even if the title alone doesn’t make it obvious).
+Fixture metadata (titles, subtitles, sections, dates, ordering, sources) lives in `index.json`. Dates accept `YYYY-MM-DD` or human-readable formats like `Nov 12th 1960`. Subtitles are invented for illustration; think about what the article is saying and write a concise Economist-style subtitle rather than an obvious restatement. When a title is vague, it’s fine to be plainer (e.g., “Asian Milestone” is subtitled “Malaya’s independence” because that’s what it covers, even if the title alone doesn’t make it obvious).
 
 ## Adding fixtures
 
 1. Find an OCR source on archive.org and copy a short excerpt (a few paragraphs) into a new `fixtures/<slug>.txt` file. End the excerpt with `■`.
-2. Add an entry to `index.json` with `slug`, `title`, `subtitle`, `file`, `date`, and `source` (archive.org details page). Keep the list sorted by date.
+2. Add an entry to `index.json` with `slug`, `title`, `subtitle`, `section`, `file`, `date`, and `source` (archive.org details page). Use canonical RSS section paths (e.g., `leaders`, `finance-and-economics`, `united-states`). Keep the list sorted by date.
 3. Use short, readable subtitles (they’re curated, not extracted).
 4. Run `go test ./internal/demo` to ensure the fixtures load and sort correctly.
 

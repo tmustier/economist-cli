@@ -3,6 +3,7 @@
     "slug": "lincoln-assassination",
     "title": "Lincoln's Assassination",
     "subtitle": "Reconstruction resumes",
+    "section": "united-states",
     "file": "lincoln-assassination.txt",
     "date": "1865-10-14",
     "source": "https://archive.org/details/economist23londuoft"
@@ -11,6 +12,7 @@
     "slug": "fair-exchange",
     "title": "Fair Exchange",
     "subtitle": "Destroyers-for-bases",
+    "section": "leaders",
     "file": "fair-exchange.txt",
     "date": "1940-09-07",
     "source": "https://archive.org/details/sim_economist_1940-09-07_139_5063"
@@ -19,6 +21,7 @@
     "slug": "german-europe",
     "title": "German Europe",
     "subtitle": "The limits of domination",
+    "section": "europe",
     "file": "german-europe.txt",
     "date": "1940-09-07",
     "source": "https://archive.org/details/sim_economist_1940-09-07_139_5063"
@@ -27,6 +30,7 @@
     "slug": "june-the-sixth",
     "title": "June the Sixth",
     "subtitle": "Landfall at Dunkirk",
+    "section": "leaders",
     "file": "june-the-sixth.txt",
     "date": "1944-06-10",
     "source": "https://archive.org/details/sim_economist_1944-06-10"
@@ -35,6 +39,7 @@
     "slug": "atom-bomb",
     "title": "The atom bomb",
     "subtitle": "Scientific triumph, horror of war",
+    "section": "science-and-technology",
     "file": "atom-bomb.txt",
     "date": "1945-08-11",
     "source": "https://archive.org/details/sim_economist_1945-08-11"
@@ -43,6 +48,7 @@
     "slug": "policy-for-korea",
     "title": "Policy for Korea",
     "subtitle": "Back at the 38th parallel",
+    "section": "asia",
     "file": "policy-for-korea.txt",
     "date": "1951-03-31",
     "source": "https://archive.org/details/sim_economist_1951-03-31_160_5614"
@@ -51,6 +57,7 @@
     "slug": "human-use-of-human-beings",
     "title": "The Human Use of Human Beings",
     "subtitle": "Thinking machines?",
+    "section": "science-and-technology",
     "file": "human-use-of-human-beings.txt",
     "date": "1951-07-14",
     "source": "https://archive.org/details/sim_economist_1951-07-14"
@@ -59,6 +66,7 @@
     "slug": "burnt-fingers",
     "title": "Burnt Fingers on the Public Pulse",
     "subtitle": "Pollster miss, Univac swing",
+    "section": "united-states",
     "file": "burnt-fingers-public-pulse.txt",
     "date": "1952-11-22",
     "source": "https://archive.org/details/sim_economist_1952-11-22"
@@ -67,6 +75,7 @@
     "slug": "death-of-stalin",
     "title": "The Death of Stalin",
     "subtitle": "Stalinism without Stalin",
+    "section": "europe",
     "file": "death-of-stalin.txt",
     "date": "1953-03-07",
     "source": "https://archive.org/details/sim_economist_1953-03-07_166"
@@ -75,6 +84,7 @@
     "slug": "rockets-for-reindeer",
     "title": "Rockets for Reindeer",
     "subtitle": "Artificial satellites",
+    "section": "science-and-technology",
     "file": "rockets-for-reindeer.txt",
     "date": "1953-12-26",
     "source": "https://archive.org/details/sim_economist_1953-12-26"
@@ -83,6 +93,7 @@
     "slug": "electronic-abacus",
     "title": "Electronic Abacus",
     "subtitle": "Lyons' electronic office",
+    "section": "science-and-technology",
     "file": "electronic-abacus.txt",
     "date": "1954-03-13",
     "source": "https://archive.org/details/sim_economist_1954-03-13"
@@ -91,6 +102,7 @@
     "slug": "president-to-the-rescue",
     "title": "President to the Rescue?",
     "subtitle": "Eisenhower's mid-term pitch",
+    "section": "united-states",
     "file": "president-to-the-rescue.txt",
     "date": "1954-10-30",
     "source": "https://archive.org/details/sim_economist_1954-10-30"
@@ -99,6 +111,7 @@
     "slug": "algerian-dilemma",
     "title": "The Algerian Dilemma",
     "subtitle": "Algeria isn't France",
+    "section": "middle-east-and-africa",
     "file": "algerian-dilemma.txt",
     "date": "1955-10-01",
     "source": "https://archive.org/details/sim_economist_1955-10-01_177"
@@ -107,6 +120,7 @@
     "slug": "freeing-electronics",
     "title": "Freeing Electronics",
     "subtitle": "$40,000-a-month brains",
+    "section": "science-and-technology",
     "file": "freeing-electronics.txt",
     "date": "1956-02-04",
     "source": "https://archive.org/details/sim_economist_1956-02-04"
@@ -115,6 +129,7 @@
     "slug": "ends-and-means-at-suez",
     "title": "Ends and Means at Suez",
     "subtitle": "Bargaining and bayonets",
+    "section": "middle-east-and-africa",
     "file": "ends-and-means-at-suez.txt",
     "date": "1956-09-08",
     "source": "https://archive.org/details/sim_economist_1956-09-08_180_5898"
@@ -123,6 +138,7 @@
     "slug": "hungary-european-future",
     "title": "Hungary and the European Future",
     "subtitle": "Budapest crushed",
+    "section": "europe",
     "file": "hungary-european-future.txt",
     "date": "1956-11-10",
     "source": "https://archive.org/details/sim_economist_1956-11-10_181_5907"
@@ -131,6 +147,7 @@
     "slug": "asian-milestone",
     "title": "Asian Milestone",
     "subtitle": "Malaya's independence",
+    "section": "asia",
     "file": "asian-milestone.txt",
     "date": "1957-08-31",
     "source": "https://archive.org/details/sim_economist_1957-08-31_184_5949"
@@ -139,6 +156,7 @@
     "slug": "both-sides-moon",
     "title": "Both Sides of the “Moon”",
     "subtitle": "The little ball in the sky and the man on the ground",
+    "section": "science-and-technology",
     "file": "both-sides-moon.txt",
     "date": "1957-10-12",
     "source": "https://archive.org/details/sim_economist_1957-10-12"
@@ -147,6 +165,7 @@
     "slug": "riding-on-the-sputnik",
     "title": "Riding on the Sputnik",
     "subtitle": "Khrushchev's summit bid",
+    "section": "europe",
     "file": "riding-on-the-sputnik.txt",
     "date": "1957-11-09",
     "source": "https://archive.org/details/sim_economist_1957-11-09"
@@ -155,6 +174,7 @@
     "slug": "young-mans-america",
     "title": "Young Man's America?",
     "subtitle": "Narrow victory for Kennedy",
+    "section": "united-states",
     "file": "young-mans-america.txt",
     "date": "1960-11-12",
     "source": "https://archive.org/details/sim_economist_1960-11-12"
