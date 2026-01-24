@@ -1,5 +1,9 @@
 # Release Notes
 
+## v0.3.9
+
+- **Demo mode**: expand the archival fixture library across early- and mid-century issues for richer browsing.
+
 ## v0.3.8
 
 - **Browse navigation**: left/right now wrap to previous/next section when paging hits the ends.
